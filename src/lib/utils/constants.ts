@@ -79,17 +79,24 @@ export const DIFFICULTY_LEVELS = [
   },
 ] as const;
 
-export const MATERIALS = [
-  'Poplar',
-  'Pine',
-  'Oak',
-  'Maple',
-  'Cherry',
-  'Walnut',
-  'Mahogany',
-  'MDF',
-  'PVC',
-  'Composite',
-  'Other Hardwood',
-  'Other Softwood',
+export const MATERIAL_GROUPS = [
+  {
+    label: 'Hardwoods',
+    options: ['Oak', 'Maple', 'Cherry', 'Walnut', 'Mahogany', 'Poplar', 'Ash', 'Birch', 'Hickory', 'Alder'],
+  },
+  {
+    label: 'Softwoods',
+    options: ['Pine', 'Cedar', 'Fir', 'Spruce', 'Redwood', 'Cypress'],
+  },
+  {
+    label: 'Engineered & Synthetic',
+    options: ['MDF', 'PVC', 'Composite', 'Plywood', 'LVL', 'Polyurethane'],
+  },
+  {
+    label: 'Other',
+    options: ['Other Hardwood', 'Other Softwood', 'Other'],
+  },
 ] as const;
+
+// Flat array for backward compatibility
+export const MATERIALS = MATERIAL_GROUPS.flatMap((group) => group.options) as const;

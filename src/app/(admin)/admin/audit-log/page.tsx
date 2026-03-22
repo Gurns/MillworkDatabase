@@ -37,7 +37,7 @@ export default function AuditLogPage() {
       const res = await fetch(`/api/admin/audit-log?${params}`);
       if (!res.ok) throw new Error('Failed to fetch audit log');
       const data = await res.json();
-      setLogs(data.logs);
+      setLogs(data.entries);
       setTotalPages(Math.ceil(data.total / pageSize));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');

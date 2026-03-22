@@ -6,15 +6,14 @@ import {
   InstalledPhotoIcon,
   ThreeDModelIcon,
   ThreeDScanIcon,
-  TessellatedMeshIcon,
 } from './MillworkFileIcons';
 
-export type TileType = 'profile' | 'photo' | 'model' | 'scan' | 'mesh';
+export type TileType = 'profile' | 'photo' | 'model' | 'scanmesh';
 
 interface UploadTileProps {
   type: TileType;
-  /** Already-uploaded file info — triggers the "filled" state */
-  file?: { name: string; url?: string; thumbnailUrl?: string; size?: number };
+  /** Already-uploaded files info — triggers the "filled" state */
+  files?: { id: string; name: string; url?: string; thumbnailUrl?: string; size?: number }[];
   /** Accept attribute for the file input */
   accept: string;
   /** Whether this tile is required (used for visual indicator) */
@@ -25,8 +24,8 @@ interface UploadTileProps {
   uploading?: boolean;
   /** Callback with the selected file */
   onFileSelect: (file: File) => void;
-  /** Callback to remove the current file */
-  onRemove?: () => void;
+  /** Callback to remove a specific file by id */
+  onRemove?: (fileId: string) => void;
 }
 
 const TILE_CONFIG: Record<TileType, { label: string; description: string; formats: string }> = {
@@ -45,15 +44,10 @@ const TILE_CONFIG: Record<TileType, { label: string; description: string; format
     description: 'Parametric or solid model file of a short section',
     formats: 'STEP, STL, OBJ, F3D, F3Z',
   },
-  scan: {
-    label: '3D Scan',
-    description: 'Raw 3D scan mesh from a structured-light or LiDAR scanner',
+  scanmesh: {
+    label: 'Scan / Mesh',
+    description: '3D scanned mesh or tessellated mesh for CNC or rendering',
     formats: 'STL, OBJ, PLY',
-  },
-  mesh: {
-    label: 'Tessellated Mesh',
-    description: 'Triangulated mesh export for CNC or rendering',
-    formats: 'STL, OBJ',
   },
 };
 
@@ -62,8 +56,7 @@ function getIcon(type: TileType, className: string): ReactNode {
     case 'profile': return <ProfileSliceIcon className={className} />;
     case 'photo': return <InstalledPhotoIcon className={className} />;
     case 'model': return <ThreeDModelIcon className={className} />;
-    case 'scan': return <ThreeDScanIcon className={className} />;
-    case 'mesh': return <TessellatedMeshIcon className={className} />;
+    case 'scanmesh': return <ThreeDScanIcon className={className} />;
   }
 }
 
@@ -76,7 +69,7 @@ function formatFileSize(bytes: number): string {
 
 export function UploadTile({
   type,
-  file,
+  files = [],
   accept,
   required = false,
   maxSize,
@@ -88,7 +81,7 @@ export function UploadTile({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const hasFile = !!file;
+  const hasFiles = files.length > 0;
   const isImage = type === 'profile' || type === 'photo';
 
   function handleClick() {
@@ -96,16 +89,24 @@ export function UploadTile({
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) onFileSelect(f);
+    const fileList = e.target.files;
+    if (fileList) {
+      for (let i = 0; i < fileList.length; i++) {
+        onFileSelect(fileList[i]);
+      }
+    }
     e.target.value = '';
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) onFileSelect(f);
+    const fileList = e.dataTransfer.files;
+    if (fileList) {
+      for (let i = 0; i < fileList.length; i++) {
+        onFileSelect(fileList[i]);
+      }
+    }
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -117,7 +118,7 @@ export function UploadTile({
     <div
       className={`
         relative rounded-xl border-2 border-dashed transition-all cursor-pointer
-        ${dragOver ? 'border-blue-400 bg-blue-50/50' : hasFile ? 'border-gray-200 bg-white' : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/30'}
+        ${dragOver ? 'border-blue-400 bg-blue-50/50' : hasFiles ? 'border-gray-200 bg-white' : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/30'}
         ${uploading ? 'opacity-60 pointer-events-none' : ''}
       `}
       onClick={handleClick}
@@ -130,18 +131,19 @@ export function UploadTile({
         type="file"
         accept={accept}
         onChange={handleChange}
+        multiple
         className="hidden"
         disabled={uploading}
       />
 
       {/* Required badge */}
-      {required && !hasFile && (
+      {required && !hasFiles && (
         <span className="absolute top-2 right-2 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
           Required*
         </span>
       )}
 
-      {hasFile ? (
+      {hasFiles ? (
         /* ─── Filled state ─── */
         <div className="p-3">
           <div className="flex items-start gap-3">
@@ -151,40 +153,53 @@ export function UploadTile({
             </div>
 
             <div className="flex-1 min-w-0">
-              {/* Image preview or file name */}
-              {isImage && file.url ? (
-                <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 mb-2">
-                  <img src={file.url} alt={config.label} className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="aspect-[4/3] rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center mb-2">
-                  <div className="text-center px-2">
-                    <svg className="w-8 h-8 mx-auto text-blue-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-xs text-gray-500 font-medium truncate">{file.name}</p>
-                    {file.size && <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>}
-                  </div>
-                </div>
-              )}
+              {/* File count badge */}
+              <div className="mb-2">
+                <span className="inline-block text-xs font-semibold text-white bg-blue-600 px-2 py-0.5 rounded-full">
+                  {files.length} {files.length === 1 ? 'file' : 'files'}
+                </span>
+              </div>
 
-              <p className="text-xs font-medium text-gray-700 truncate">{config.label}</p>
-              {isImage && file.name && <p className="text-xs text-gray-400 truncate">{file.name}</p>}
+              {/* List of files */}
+              <div className="space-y-2">
+                {files.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-100">
+                    <div className="flex-1 min-w-0">
+                      {isImage && file.url ? (
+                        <div>
+                          <div className="aspect-[4/3] rounded-md overflow-hidden bg-gray-100 mb-1">
+                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                          </div>
+                          <p className="text-xs font-medium text-gray-700 truncate">{file.name}</p>
+                          {file.size && <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>}
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-xs font-medium text-gray-700 truncate">{file.name}</p>
+                          {file.size && <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Remove button for this file */}
+                    {onRemove && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onRemove(file.id); }}
+                        className="ml-2 w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition-colors shrink-0"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs font-medium text-gray-700 truncate mt-2">{config.label}</p>
             </div>
           </div>
-
-          {/* Remove button */}
-          {onRemove && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
         </div>
       ) : (
         /* ─── Empty state ─── */

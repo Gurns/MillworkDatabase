@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { createDesignSchema, type CreateDesignInput } from '@/lib/validators/design';
-import { DIFFICULTY_LEVELS, MATERIALS } from '@/lib/utils/constants';
+import { DIFFICULTY_LEVELS, MATERIALS, MATERIAL_GROUPS } from '@/lib/utils/constants';
 import {
   isAllowedImageType,
   isAllowedModelFile,
@@ -36,20 +36,18 @@ export default function NewDesignPage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [designId, setDesignId] = useState<string | null>(null);
 
-  // Per-tile file state
-  const [tileFiles, setTileFiles] = useState<Record<TileType, TileFile | null>>({
-    profile: null,
-    photo: null,
-    model: null,
-    scan: null,
-    mesh: null,
+  // Per-tile file state - arrays instead of single files
+  const [tileFiles, setTileFiles] = useState<Record<TileType, TileFile[]>>({
+    profile: [],
+    photo: [],
+    model: [],
+    scanmesh: [],
   });
   const [tileUploading, setTileUploading] = useState<Record<TileType, boolean>>({
     profile: false,
     photo: false,
     model: false,
-    scan: false,
-    mesh: false,
+    scanmesh: false,
   });
 
   const [form, setForm] = useState({
@@ -60,15 +58,19 @@ export default function NewDesignPage() {
     price_cents: '',
     material: '',
     difficulty_level: '',
-    estimated_build_hours: '',
     dimensions_length: '',
     dimensions_width: '',
     dimensions_height: '',
     dimensions_unit: 'in',
     category_ids: [] as string[],
     style_ids: [] as string[],
+    custom_categories: [] as string[],
+    custom_styles: [] as string[],
     tags: '',
   });
+
+  const [customCategoryInput, setCustomCategoryInput] = useState('');
+  const [customStyleInput, setCustomStyleInput] = useState('');
 
   // Fetch categories and styles
   useEffect(() => {
@@ -94,6 +96,40 @@ export default function NewDesignPage() {
       [field]: prev[field].includes(id)
         ? prev[field].filter((v) => v !== id)
         : [...prev[field], id],
+    }));
+  }
+
+  function addCustomCategory() {
+    if (customCategoryInput.trim()) {
+      setForm((prev) => ({
+        ...prev,
+        custom_categories: [...prev.custom_categories, customCategoryInput.trim()],
+      }));
+      setCustomCategoryInput('');
+    }
+  }
+
+  function removeCustomCategory(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      custom_categories: prev.custom_categories.filter((_, i) => i !== index),
+    }));
+  }
+
+  function addCustomStyle() {
+    if (customStyleInput.trim()) {
+      setForm((prev) => ({
+        ...prev,
+        custom_styles: [...prev.custom_styles, customStyleInput.trim()],
+      }));
+      setCustomStyleInput('');
+    }
+  }
+
+  function removeCustomStyle(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      custom_styles: prev.custom_styles.filter((_, i) => i !== index),
     }));
   }
 
@@ -158,13 +194,14 @@ export default function NewDesignPage() {
           .single();
 
         if (img) {
+          // Append to array instead of replacing
           setTileFiles((prev) => ({
             ...prev,
-            [tileType]: { id: img.id, name: file.name, url: publicUrl, size: file.size },
+            [tileType]: [...prev[tileType], { id: img.id, name: file.name, url: publicUrl, size: file.size }],
           }));
 
           // Set profile image as primary if it's the first image
-          if (tileType === 'profile' || !tileFiles.profile) {
+          if (tileType === 'profile' || tileFiles.profile.length === 0) {
             await supabase
               .from('designs')
               .update({ primary_image_url: publicUrl })
@@ -186,9 +223,10 @@ export default function NewDesignPage() {
           .single();
 
         if (fileRecord) {
+          // Append to array instead of replacing
           setTileFiles((prev) => ({
             ...prev,
-            [tileType]: { id: fileRecord.id, name: file.name, size: file.size, dbType: fileType },
+            [tileType]: [...prev[tileType], { id: fileRecord.id, name: file.name, size: file.size, dbType: fileType }],
           }));
         }
       }
@@ -199,18 +237,24 @@ export default function NewDesignPage() {
     }
   }
 
-  async function handleTileRemove(tileType: TileType) {
-    const tf = tileFiles[tileType];
-    if (!tf || !designId) return;
+  async function handleTileRemove(tileType: TileType, fileId: string) {
+    if (!designId) return;
+
+    const file = tileFiles[tileType].find((f) => f.id === fileId);
+    if (!file) return;
 
     const isImageTile = tileType === 'profile' || tileType === 'photo';
     if (isImageTile) {
-      await supabase.from('design_images').delete().eq('id', tf.id);
+      await supabase.from('design_images').delete().eq('id', fileId);
     } else {
-      await supabase.from('design_files').delete().eq('id', tf.id);
+      await supabase.from('design_files').delete().eq('id', fileId);
     }
 
-    setTileFiles((prev) => ({ ...prev, [tileType]: null }));
+    // Remove specific file from array
+    setTileFiles((prev) => ({
+      ...prev,
+      [tileType]: prev[tileType].filter((f) => f.id !== fileId),
+    }));
   }
 
   // ─── Save / Publish ───
@@ -220,10 +264,10 @@ export default function NewDesignPage() {
   }
 
   async function handlePublish() {
-    // Validate that at least one 3D file (model, scan, or mesh) is present
-    const has3D = tileFiles.model || tileFiles.scan || tileFiles.mesh;
+    // Validate that at least one 3D file (model or scanmesh) is present
+    const has3D = tileFiles.model.length > 0 || tileFiles.scanmesh.length > 0;
     if (!has3D) {
-      setGlobalError('At least one 3D file (Model, Scan, or Mesh) is required to publish.');
+      setGlobalError('At least one 3D file (Model or Scan/Mesh) is required to publish.');
       return;
     }
     await saveDesign(true);
@@ -241,7 +285,6 @@ export default function NewDesignPage() {
       price_cents: form.is_free ? undefined : parseInt(form.price_cents) || undefined,
       material: form.material || undefined,
       difficulty_level: form.difficulty_level || undefined,
-      estimated_build_hours: form.estimated_build_hours ? parseInt(form.estimated_build_hours) : undefined,
       category_ids: form.category_ids,
       style_ids: form.style_ids,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
@@ -317,7 +360,7 @@ export default function NewDesignPage() {
   }
 
   // Check if we have at least one 3D file
-  const has3DFile = !!(tileFiles.model || tileFiles.scan || tileFiles.mesh);
+  const has3DFile = tileFiles.model.length > 0 || tileFiles.scanmesh.length > 0;
 
   return (
     <div>
@@ -409,6 +452,51 @@ export default function NewDesignPage() {
                 </div>
               </div>
             ))}
+
+            {/* Custom Category Input */}
+            <div className="pt-2 border-t border-gray-200">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Other / Custom Type"
+                  value={customCategoryInput}
+                  onChange={(e) => setCustomCategoryInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomCategory();
+                    }
+                  }}
+                  className="input-field flex-1 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomCategory}
+                  className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+              {form.custom_categories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {form.custom_categories.map((cat, idx) => (
+                    <div
+                      key={idx}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-dashed border-brand-300 flex items-center gap-2"
+                    >
+                      {cat}
+                      <button
+                        type="button"
+                        onClick={() => removeCustomCategory(idx)}
+                        className="text-brand-600 hover:text-brand-800 font-bold"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -431,6 +519,51 @@ export default function NewDesignPage() {
               </button>
             ))}
           </div>
+
+          {/* Custom Style Input */}
+          <div className="pt-4 border-t border-gray-200 mt-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Other / Custom Style"
+                value={customStyleInput}
+                onChange={(e) => setCustomStyleInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomStyle();
+                  }
+                }}
+                className="input-field flex-1 text-sm"
+              />
+              <button
+                type="button"
+                onClick={addCustomStyle}
+                className="px-3 py-1.5 bg-wood-800 text-white rounded-lg text-sm font-medium hover:bg-wood-900 transition-colors"
+              >
+                +
+              </button>
+            </div>
+            {form.custom_styles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {form.custom_styles.map((style, idx) => (
+                  <div
+                    key={idx}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-wood-50 text-wood-700 border border-dashed border-wood-300 flex items-center gap-2"
+                  >
+                    {style}
+                    <button
+                      type="button"
+                      onClick={() => removeCustomStyle(idx)}
+                      className="text-wood-600 hover:text-wood-800 font-bold"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Dimensions & Details */}
@@ -445,7 +578,11 @@ export default function NewDesignPage() {
                 className="input-field"
               >
                 <option value="">Select material...</option>
-                {MATERIALS.map((m) => <option key={m} value={m}>{m}</option>)}
+                {MATERIAL_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </div>
             <div>
@@ -460,17 +597,6 @@ export default function NewDesignPage() {
                   <option key={d.value} value={d.value}>{d.label} — {d.description}</option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Est. Build Hours</label>
-              <input
-                type="number"
-                min="1"
-                value={form.estimated_build_hours}
-                onChange={(e) => updateField('estimated_build_hours', e.target.value)}
-                className="input-field"
-                placeholder="e.g. 4"
-              />
             </div>
           </div>
 
@@ -572,7 +698,7 @@ export default function NewDesignPage() {
           <section className="card p-6">
             <h2 className="font-semibold text-gray-900 mb-1">Design Files</h2>
             <p className="text-sm text-gray-500 mb-2">
-              Upload your millwork files. At least one 3D file (model, scan, or mesh) is required to publish.
+              Upload your millwork files. At least one 3D file (model or scan/mesh) is required to publish.
             </p>
             {!has3DFile && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
@@ -580,57 +706,45 @@ export default function NewDesignPage() {
               </p>
             )}
 
-            {/* 5-tile grid: 3 on top, 2 on bottom centered */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Row 1: Images + primary 3D model */}
+            {/* 4-tile 2x2 grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               <UploadTile
                 type="profile"
-                file={tileFiles.profile ?? undefined}
+                files={tileFiles.profile}
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 maxSize={MAX_IMAGE_SIZE}
                 uploading={tileUploading.profile}
                 onFileSelect={(f) => handleTileUpload('profile', f)}
-                onRemove={tileFiles.profile ? () => handleTileRemove('profile') : undefined}
+                onRemove={(fileId) => handleTileRemove('profile', fileId)}
               />
               <UploadTile
                 type="photo"
-                file={tileFiles.photo ?? undefined}
+                files={tileFiles.photo}
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 maxSize={MAX_IMAGE_SIZE}
                 uploading={tileUploading.photo}
                 onFileSelect={(f) => handleTileUpload('photo', f)}
-                onRemove={tileFiles.photo ? () => handleTileRemove('photo') : undefined}
+                onRemove={(fileId) => handleTileRemove('photo', fileId)}
               />
               <UploadTile
                 type="model"
-                file={tileFiles.model ?? undefined}
+                files={tileFiles.model}
                 accept=".step,.stp,.stl,.obj,.f3d,.f3z"
                 required={!has3DFile}
                 maxSize={MAX_MODEL_SIZE}
                 uploading={tileUploading.model}
                 onFileSelect={(f) => handleTileUpload('model', f)}
-                onRemove={tileFiles.model ? () => handleTileRemove('model') : undefined}
+                onRemove={(fileId) => handleTileRemove('model', fileId)}
               />
-              {/* Row 2: Scan + Mesh */}
               <UploadTile
-                type="scan"
-                file={tileFiles.scan ?? undefined}
+                type="scanmesh"
+                files={tileFiles.scanmesh}
                 accept=".stl,.obj,.ply"
                 required={!has3DFile}
                 maxSize={MAX_MODEL_SIZE}
-                uploading={tileUploading.scan}
-                onFileSelect={(f) => handleTileUpload('scan', f)}
-                onRemove={tileFiles.scan ? () => handleTileRemove('scan') : undefined}
-              />
-              <UploadTile
-                type="mesh"
-                file={tileFiles.mesh ?? undefined}
-                accept=".stl,.obj"
-                required={!has3DFile}
-                maxSize={MAX_MODEL_SIZE}
-                uploading={tileUploading.mesh}
-                onFileSelect={(f) => handleTileUpload('mesh', f)}
-                onRemove={tileFiles.mesh ? () => handleTileRemove('mesh') : undefined}
+                uploading={tileUploading.scanmesh}
+                onFileSelect={(f) => handleTileUpload('scanmesh', f)}
+                onRemove={(fileId) => handleTileRemove('scanmesh', fileId)}
               />
             </div>
 
@@ -642,15 +756,14 @@ export default function NewDesignPage() {
           <section className="card p-6">
             <h2 className="font-semibold text-gray-900 mb-2">Design Files</h2>
             <p className="text-sm text-gray-500">
-              Save as draft first, then you&apos;ll be able to upload your 2D profiles, photos, 3D models, scans, and mesh files.
+              Save as draft first, then you&apos;ll be able to upload your 2D profiles, photos, 3D models, and scan/mesh files.
             </p>
-            {/* Preview the tile layout in disabled state */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 opacity-40 pointer-events-none">
+            {/* Preview the 4-tile 2x2 layout in disabled state */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mt-4 opacity-40 pointer-events-none">
               <UploadTile type="profile" accept="" onFileSelect={() => {}} />
               <UploadTile type="photo" accept="" onFileSelect={() => {}} />
               <UploadTile type="model" accept="" required onFileSelect={() => {}} />
-              <UploadTile type="scan" accept="" required onFileSelect={() => {}} />
-              <UploadTile type="mesh" accept="" required onFileSelect={() => {}} />
+              <UploadTile type="scanmesh" accept="" required onFileSelect={() => {}} />
             </div>
           </section>
         )}
