@@ -14,10 +14,14 @@ export function slugify(text: string): string {
 
 /**
  * Generate a unique slug by appending a random suffix.
- * e.g. "victorian-crown-molding-a3f2"
+ * Uses 8 chars from crypto-quality random for low collision probability.
+ * e.g. "victorian-crown-molding-a3f2b9c1"
  */
 export function uniqueSlug(text: string): string {
   const base = slugify(text);
-  const suffix = Math.random().toString(36).substring(2, 6);
+  // Generate 8 character random hex suffix (~32 bits of entropy)
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const suffix = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
   return `${base}-${suffix}`;
 }

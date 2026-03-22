@@ -13,6 +13,12 @@ export async function GET(
     return NextResponse.json({ error: 'Please sign in to download files' }, { status: 401 });
   }
 
+  // Validate filename to prevent path traversal
+  const decodedFilename = decodeURIComponent(params.filename);
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/.test(decodedFilename) || decodedFilename.includes('..')) {
+    return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
+  }
+
   // Get design details
   const { data: design } = await supabase
     .from('designs')
@@ -43,7 +49,7 @@ export async function GET(
     .from('design_files')
     .select('file_path, file_name')
     .eq('design_id', params.id)
-    .eq('file_name', decodeURIComponent(params.filename))
+    .eq('file_name', decodedFilename)
     .single();
 
   if (!file) {

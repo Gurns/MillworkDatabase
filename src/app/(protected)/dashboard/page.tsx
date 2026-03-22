@@ -12,32 +12,23 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // Fetch user profile + stats
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Fetch all dashboard data in parallel
+  const [profileResult, statsResult, designsResult, favResult] = await Promise.all([
+    supabase.from('users').select('*').eq('id', user.id).single(),
+    supabase.from('user_stats').select('*').eq('user_id', user.id).single(),
+    supabase.from('designs')
+      .select('id, title, slug, status, view_count, download_count, favorite_count, published_at, created_at', { count: 'exact' })
+      .eq('creator_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  ]);
 
-  const { data: stats } = await supabase
-    .from('user_stats')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
-
-  // Fetch recent designs
-  const { data: recentDesigns, count: designCount } = await supabase
-    .from('designs')
-    .select('id, title, slug, status, view_count, download_count, favorite_count, published_at, created_at', { count: 'exact' })
-    .eq('creator_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  // Fetch recent favorites count
-  const { count: favCount } = await supabase
-    .from('favorites')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+  const profile = profileResult.data;
+  const stats = statsResult.data;
+  const recentDesigns = designsResult.data;
+  const designCount = designsResult.count;
+  const favCount = favResult.count;
 
   const level = getLevelForPoints(stats?.total_points || 0);
   const nextLevel = LEVELS.find((l) => l.min_points > (stats?.total_points || 0));

@@ -12,6 +12,7 @@ interface FavoriteButtonProps {
 export function FavoriteButton({ designId, initialFavorited, isLoggedIn }: FavoriteButtonProps) {
   const [favorited, setFavorited] = useState(initialFavorited);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function toggle() {
@@ -21,27 +22,33 @@ export function FavoriteButton({ designId, initialFavorited, isLoggedIn }: Favor
     }
 
     setLoading(true);
+    setError(null);
     try {
       if (favorited) {
-        await fetch(`/api/favorites/${designId}`, { method: 'DELETE' });
+        const res = await fetch(`/api/favorites/${designId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to remove favorite');
         setFavorited(false);
       } else {
-        await fetch('/api/favorites', {
+        const res = await fetch('/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ design_id: designId }),
         });
+        if (!res.ok) throw new Error('Failed to add favorite');
         setFavorited(true);
       }
       router.refresh();
     } catch {
-      // Revert on error
+      setError('Something went wrong. Please try again.');
+      setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
     }
   }
 
   return (
+    <div>
+    {error && <p className="text-red-500 text-xs mb-1 text-center">{error}</p>}
     <button
       onClick={toggle}
       disabled={loading}
@@ -66,5 +73,6 @@ export function FavoriteButton({ designId, initialFavorited, isLoggedIn }: Favor
       </svg>
       {favorited ? 'Saved to Favorites' : 'Add to Favorites'}
     </button>
+    </div>
   );
 }

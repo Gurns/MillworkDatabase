@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { SuggestionReel } from '@/components/design/SuggestionReel';
 import { MAIN_CATEGORIES, ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 export default function HomePage() {
@@ -115,6 +116,24 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Suggestion Reels */}
+        <section className="py-8 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SuggestionReel
+              title="Trending Designs"
+              subtitle="Popular in the community this month"
+              type="trending"
+              limit={12}
+            />
+            <SuggestionReel
+              title="Recommended for You"
+              subtitle="Based on your favorites and downloads"
+              type="personalized"
+              limit={12}
+            />
           </div>
         </section>
 

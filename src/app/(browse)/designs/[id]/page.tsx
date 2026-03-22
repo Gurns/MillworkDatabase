@@ -5,6 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { CommentSection } from '@/components/design/CommentSection';
 import { FavoriteButton } from '@/components/design/FavoriteButton';
 import { DesignFileList } from '@/components/design/DesignFileList';
+import { SuggestionReel } from '@/components/design/SuggestionReel';
 import Link from 'next/link';
 import { formatFileSize } from '@/lib/utils/file-validation';
 import type { Metadata } from 'next';
@@ -328,6 +329,25 @@ export default async function DesignDetailPage({ params }: Props) {
             </div>
           </div>
         </div>
+
+          {/* Similar Designs */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SuggestionReel
+              title="You Might Also Like"
+              subtitle="Designs similar to this one"
+              type="similar"
+              designId={params.id}
+              limit={8}
+            />
+            {categories.length > 0 && (
+              <SuggestionReel
+                title={`More in ${categories[0].name}`}
+                type="category"
+                category={categories[0].slug}
+                limit={8}
+              />
+            )}
+          </div>
       </main>
       <Footer />
     </>
