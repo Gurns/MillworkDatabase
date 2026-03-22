@@ -22,7 +22,7 @@ RETURNS TABLE (
   download_count INT,
   favorite_count INT,
   is_free BOOLEAN,
-  price DECIMAL,
+  price INT,
   published_at TIMESTAMPTZ,
   similarity_score BIGINT
 ) AS $$
@@ -71,20 +71,22 @@ BEGIN
     d.creator_id,
     u.username AS creator_username,
     u.display_name AS creator_display_name,
-    di.url AS thumbnail_url,
+    COALESCE(di.thumbnail_url, di.image_url) AS thumbnail_url,
     d.view_count,
     d.download_count,
     d.favorite_count,
     d.is_free,
-    d.price,
+    d.price_cents AS price,
     d.published_at,
     s.score AS similarity_score
   FROM scored s
   JOIN designs d ON d.id = s.id
   JOIN users u ON u.id = d.creator_id
   LEFT JOIN LATERAL (
-    SELECT url FROM design_images
-    WHERE design_id = d.id AND is_primary = true
+    SELECT dim.thumbnail_url, dim.image_url
+    FROM design_images dim
+    WHERE dim.design_id = d.id
+    ORDER BY dim.display_order ASC
     LIMIT 1
   ) di ON true
   WHERE s.score > 0
@@ -113,7 +115,7 @@ RETURNS TABLE (
   download_count INT,
   favorite_count INT,
   is_free BOOLEAN,
-  price DECIMAL,
+  price INT,
   published_at TIMESTAMPTZ,
   trending_score BIGINT
 ) AS $$
@@ -151,20 +153,22 @@ BEGIN
     d.creator_id,
     u.username AS creator_username,
     u.display_name AS creator_display_name,
-    di.url AS thumbnail_url,
+    COALESCE(di.thumbnail_url, di.image_url) AS thumbnail_url,
     d.view_count,
     d.download_count,
     d.favorite_count,
     d.is_free,
-    d.price,
+    d.price_cents AS price,
     d.published_at,
     s.score AS trending_score
   FROM scored s
   JOIN designs d ON d.id = s.id
   JOIN users u ON u.id = d.creator_id
   LEFT JOIN LATERAL (
-    SELECT url FROM design_images
-    WHERE design_id = d.id AND is_primary = true
+    SELECT dim.thumbnail_url, dim.image_url
+    FROM design_images dim
+    WHERE dim.design_id = d.id
+    ORDER BY dim.display_order ASC
     LIMIT 1
   ) di ON true
   WHERE s.score > 0
@@ -193,7 +197,7 @@ RETURNS TABLE (
   download_count INT,
   favorite_count INT,
   is_free BOOLEAN,
-  price DECIMAL,
+  price INT,
   published_at TIMESTAMPTZ,
   relevance_score BIGINT
 ) AS $$
@@ -250,20 +254,22 @@ BEGIN
     d.creator_id,
     u.username AS creator_username,
     u.display_name AS creator_display_name,
-    di.url AS thumbnail_url,
+    COALESCE(di.thumbnail_url, di.image_url) AS thumbnail_url,
     d.view_count,
     d.download_count,
     d.favorite_count,
     d.is_free,
-    d.price,
+    d.price_cents AS price,
     d.published_at,
     s.score AS relevance_score
   FROM scored s
   JOIN designs d ON d.id = s.id
   JOIN users u ON u.id = d.creator_id
   LEFT JOIN LATERAL (
-    SELECT url FROM design_images
-    WHERE design_id = d.id AND is_primary = true
+    SELECT dim.thumbnail_url, dim.image_url
+    FROM design_images dim
+    WHERE dim.design_id = d.id
+    ORDER BY dim.display_order ASC
     LIMIT 1
   ) di ON true
   WHERE s.score > 0
@@ -291,7 +297,7 @@ RETURNS TABLE (
   download_count INT,
   favorite_count INT,
   is_free BOOLEAN,
-  price DECIMAL,
+  price INT,
   published_at TIMESTAMPTZ
 ) AS $$
 BEGIN
@@ -304,25 +310,27 @@ BEGIN
     d.creator_id,
     u.username AS creator_username,
     u.display_name AS creator_display_name,
-    di.url AS thumbnail_url,
+    COALESCE(di.thumbnail_url, di.image_url) AS thumbnail_url,
     d.view_count,
     d.download_count,
     d.favorite_count,
     d.is_free,
-    d.price,
+    d.price_cents AS price,
     d.published_at
   FROM designs d
   JOIN users u ON u.id = d.creator_id
   JOIN design_categories dc ON dc.design_id = d.id
   JOIN categories c ON c.id = dc.category_id
   LEFT JOIN LATERAL (
-    SELECT url FROM design_images
-    WHERE design_id = d.id AND is_primary = true
+    SELECT dim.thumbnail_url, dim.image_url
+    FROM design_images dim
+    WHERE dim.design_id = d.id
+    ORDER BY dim.display_order ASC
     LIMIT 1
   ) di ON true
   WHERE d.status = 'published'
     AND (c.slug = p_category_slug OR c.parent_category_id = (
-      SELECT id FROM categories WHERE slug = p_category_slug LIMIT 1
+      SELECT cat.id FROM categories cat WHERE cat.slug = p_category_slug LIMIT 1
     ))
   ORDER BY d.favorite_count DESC, d.download_count DESC
   LIMIT p_limit;
@@ -338,4 +346,4 @@ CREATE INDEX IF NOT EXISTS idx_downloads_design_created ON downloads(design_id, 
 CREATE INDEX IF NOT EXISTS idx_design_tags_tag_name ON design_tags(tag_name);
 CREATE INDEX IF NOT EXISTS idx_designs_status_favorite ON designs(status, favorite_count DESC);
 CREATE INDEX IF NOT EXISTS idx_designs_status_download ON designs(status, download_count DESC);
-CREATE INDEX IF NOT EXISTS idx_design_images_primary ON design_images(design_id, is_primary) WHERE is_primary = true;
+CREATE INDEX IF NOT EXISTS idx_design_images_display_order ON design_images(design_id, display_order ASC);
