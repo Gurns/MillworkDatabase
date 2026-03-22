@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { MAIN_CATEGORIES } from '@/lib/utils/constants';
@@ -9,6 +9,19 @@ export function Header() {
   const { user, loading, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [catMenuOpen, setCatMenuOpen] = useState(false);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  // Close category dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) {
+        setCatMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -26,15 +39,38 @@ export function Header() {
             <Link href="/designs" className="btn-ghost text-sm">
               Browse
             </Link>
-            {MAIN_CATEGORIES.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/categories/${cat.slug}`}
-                className="btn-ghost text-sm"
+
+            {/* Categories dropdown */}
+            <div ref={catRef} className="relative">
+              <button
+                onClick={() => setCatMenuOpen(!catMenuOpen)}
+                className="btn-ghost text-sm flex items-center gap-1"
               >
-                {cat.name}
-              </Link>
-            ))}
+                Categories
+                <svg className={`w-3.5 h-3.5 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {catMenuOpen && (
+                <div className="absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-30">
+                  {MAIN_CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.slug}
+                      href={`/categories/${cat.slug}`}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+                      onClick={() => setCatMenuOpen(false)}
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link href="/styles" className="btn-ghost text-sm">
+              Styles
+            </Link>
             <Link href="/cnc-providers" className="btn-ghost text-sm">
               CNC Services
             </Link>
@@ -178,16 +214,24 @@ export function Header() {
             <Link href="/designs" className="block py-2 text-sm text-gray-700 hover:text-brand-600" onClick={() => setMobileMenuOpen(false)}>
               Browse All
             </Link>
-            {MAIN_CATEGORIES.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/categories/${cat.slug}`}
-                className="block py-2 text-sm text-gray-700 hover:text-brand-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {cat.name}
-              </Link>
-            ))}
+
+            <div className="py-2">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Categories</p>
+              {MAIN_CATEGORIES.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`/categories/${cat.slug}`}
+                  className="block py-1.5 pl-3 text-sm text-gray-700 hover:text-brand-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+
+            <Link href="/styles" className="block py-2 text-sm text-gray-700 hover:text-brand-600" onClick={() => setMobileMenuOpen(false)}>
+              Styles
+            </Link>
             <Link href="/cnc-providers" className="block py-2 text-sm text-gray-700 hover:text-brand-600" onClick={() => setMobileMenuOpen(false)}>
               CNC Services
             </Link>

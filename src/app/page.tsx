@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { SuggestionReel } from '@/components/design/SuggestionReel';
+import { ArchitecturalExplorer } from '@/components/explore/ArchitecturalExplorer';
 import { MAIN_CATEGORIES, ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 export default function HomePage() {
@@ -16,7 +17,7 @@ export default function HomePage() {
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             }} />
           </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
             <div className="max-w-3xl">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
                 Architectural Millwork,{' '}
@@ -65,31 +66,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Categories Section */}
-        <section className="py-16 bg-white">
+        {/* ★ FEATURED: Interactive Architectural Explorer ★ */}
+        <ArchitecturalExplorer />
+
+        {/* Categories Grid */}
+        <section className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-8">
               Browse by Category
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {MAIN_CATEGORIES.map((category) => (
                 <Link
                   key={category.slug}
                   href={`/categories/${category.slug}`}
-                  className="group card p-6 text-center hover:border-brand-300"
+                  className="group card p-5 text-center hover:border-brand-300"
                 >
-                  <div className="w-14 h-14 bg-brand-50 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-100 transition-colors">
+                  <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-brand-100 transition-colors">
                     <CategoryIcon name={category.icon} />
                   </div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-brand-600 transition-colors">
+                  <h3 className="font-semibold text-gray-900 text-sm group-hover:text-brand-600 transition-colors">
                     {category.name}
                   </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {category.slug === 'trim-and-molding' && 'Crown, baseboards, casings & more'}
-                    {category.slug === 'stair-parts' && 'Newels, balusters & handrails'}
-                    {category.slug === 'mantels' && 'Surrounds, shelves & legs'}
-                    {category.slug === 'built-ins' && 'Paneling, shelving & doors'}
-                  </p>
                 </Link>
               ))}
             </div>
@@ -208,7 +206,7 @@ export default function HomePage() {
 
 // Simple icon component for categories
 function CategoryIcon({ name }: { name: string }) {
-  const iconClass = 'w-7 h-7 text-brand-600';
+  const iconClass = 'w-6 h-6 text-brand-600';
   switch (name) {
     case 'Ruler':
       return (
@@ -227,7 +225,6 @@ function CategoryIcon({ name }: { name: string }) {
       return (
         <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
         </svg>
       );
     case 'LayoutGrid':
@@ -237,6 +234,37 @@ function CategoryIcon({ name }: { name: string }) {
           <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth={1.5} />
           <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth={1.5} />
           <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth={1.5} />
+        </svg>
+      );
+    case 'Paintbrush':
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      );
+    case 'DoorOpen':
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h1M9 11h1M9 15h1" />
+        </svg>
+      );
+    case 'Columns3':
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21h18M4 3h16M6 3v18M10 3v18M14 3v18M18 3v18" />
+        </svg>
+      );
+    case 'Building2':
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M8 11h0M12 11h0M16 11h0M8 15h0M12 15h0M16 15h0" />
+        </svg>
+      );
+    case 'PanelTop':
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5} />
+          <line x1="3" y1="9" x2="21" y2="9" strokeWidth={1.5} />
         </svg>
       );
     default:

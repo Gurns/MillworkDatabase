@@ -44,6 +44,11 @@ export const MAIN_CATEGORIES = [
   { name: 'Stair Parts', slug: 'stair-parts', icon: 'Stairs' },
   { name: 'Mantels', slug: 'mantels', icon: 'Flame' },
   { name: 'Built-ins', slug: 'built-ins', icon: 'LayoutGrid' },
+  { name: 'Carvings', slug: 'carvings', icon: 'Paintbrush' },
+  { name: 'Windows & Doorways', slug: 'windows-and-doorways', icon: 'DoorOpen' },
+  { name: 'Columns & Pilasters', slug: 'columns-and-pilasters', icon: 'Columns3' },
+  { name: 'Entablature', slug: 'entablature', icon: 'Building2' },
+  { name: 'Ceiling & Wall Elements', slug: 'ceiling-and-wall-elements', icon: 'PanelTop' },
 ] as const;
 
 export const ARCHITECTURAL_STYLES = [
