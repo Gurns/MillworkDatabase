@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { createDesignSchema, type CreateDesignInput } from '@/lib/validators/design';
-import { DIFFICULTY_LEVELS, MATERIALS, MATERIAL_GROUPS } from '@/lib/utils/constants';
+import { DIFFICULTY_LEVELS, MATERIALS, MATERIAL_GROUPS, CC_LICENSES, type CCLicenseCode, getLicenseByCode } from '@/lib/utils/constants';
+import { LicenseChooser } from '@/components/upload/LicenseChooser';
 import {
   isAllowedImageType,
   isAllowedModelFile,
@@ -67,6 +68,7 @@ export default function NewDesignPage() {
     custom_categories: [] as string[],
     custom_styles: [] as string[],
     tags: '',
+    license_type: 'CC-BY-4.0' as CCLicenseCode,
   });
 
   const [customCategoryInput, setCustomCategoryInput] = useState('');
@@ -285,6 +287,7 @@ export default function NewDesignPage() {
       price_cents: form.is_free ? undefined : parseInt(form.price_cents) || undefined,
       material: form.material || undefined,
       difficulty_level: form.difficulty_level || undefined,
+      license_type: form.license_type,
       category_ids: form.category_ids,
       style_ids: form.style_ids,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
@@ -691,6 +694,18 @@ export default function NewDesignPage() {
               </p>
             </div>
           )}
+        </section>
+
+        {/* Licensing */}
+        <section className="card p-6">
+          <h2 className="font-semibold text-gray-900 mb-1">License</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Choose how others can use your design. All Creative Commons licenses require attribution except CC0 (public domain).
+          </p>
+          <LicenseChooser
+            value={form.license_type}
+            onChange={(code) => updateField('license_type', code)}
+          />
         </section>
 
         {/* ─── File Upload Tiles ─── */}

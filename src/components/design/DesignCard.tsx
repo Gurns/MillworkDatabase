@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { DesignWithCreator } from '@/types';
+import { LicenseBadge } from '@/components/design/LicenseBadge';
 
 interface DesignCardProps {
   design: DesignWithCreator;
@@ -47,7 +48,14 @@ export function DesignCard({ design }: DesignCardProps) {
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{design.description}</p>
         )}
 
-        <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
+        {/* License */}
+        {(design as any).license_type && (
+          <div className="mt-2">
+            <LicenseBadge licenseType={(design as any).license_type} variant="inline" />
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
           <span className="flex items-center gap-1">
             <span className="w-5 h-5 rounded-full bg-gray-200 inline-flex items-center justify-center text-[10px] font-medium text-gray-600">
               {design.creator?.display_name?.[0] || design.creator?.username?.[0] || '?'}

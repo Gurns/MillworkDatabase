@@ -100,3 +100,104 @@ export const MATERIAL_GROUPS = [
 
 // Flat array for backward compatibility
 export const MATERIALS = MATERIAL_GROUPS.flatMap((group) => group.options) as const;
+
+// ─── Creative Commons Licensing ───
+export const CC_LICENSES = [
+  {
+    code: 'CC0',
+    name: 'CC0 — Public Domain',
+    shortName: 'Public Domain',
+    description: 'No rights reserved. Anyone can use this design for any purpose without attribution.',
+    allows_commercial: true,
+    allows_derivatives: true,
+    requires_attribution: false,
+    requires_sharealike: false,
+    url: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    badge: 'https://licensebuttons.net/p/zero/1.0/88x31.png',
+    icons: ['zero'],
+  },
+  {
+    code: 'CC-BY-4.0',
+    name: 'CC BY 4.0 — Attribution',
+    shortName: 'Attribution',
+    description: 'Others can use, modify, and sell works based on your design, as long as they credit you.',
+    allows_commercial: true,
+    allows_derivatives: true,
+    requires_attribution: true,
+    requires_sharealike: false,
+    url: 'https://creativecommons.org/licenses/by/4.0/',
+    badge: 'https://licensebuttons.net/l/by/4.0/88x31.png',
+    icons: ['by'],
+  },
+  {
+    code: 'CC-BY-SA-4.0',
+    name: 'CC BY-SA 4.0 — Attribution-ShareAlike',
+    shortName: 'Attribution-ShareAlike',
+    description: 'Others can use and modify your design (including commercially), but must credit you and share their modifications under the same license.',
+    allows_commercial: true,
+    allows_derivatives: true,
+    requires_attribution: true,
+    requires_sharealike: true,
+    url: 'https://creativecommons.org/licenses/by-sa/4.0/',
+    badge: 'https://licensebuttons.net/l/by-sa/4.0/88x31.png',
+    icons: ['by', 'sa'],
+  },
+  {
+    code: 'CC-BY-NC-4.0',
+    name: 'CC BY-NC 4.0 — Attribution-NonCommercial',
+    shortName: 'Attribution-NonCommercial',
+    description: 'Others can use and modify your design for non-commercial purposes, as long as they credit you.',
+    allows_commercial: false,
+    allows_derivatives: true,
+    requires_attribution: true,
+    requires_sharealike: false,
+    url: 'https://creativecommons.org/licenses/by-nc/4.0/',
+    badge: 'https://licensebuttons.net/l/by-nc/4.0/88x31.png',
+    icons: ['by', 'nc'],
+  },
+  {
+    code: 'CC-BY-NC-SA-4.0',
+    name: 'CC BY-NC-SA 4.0 — Attribution-NonCommercial-ShareAlike',
+    shortName: 'NonCommercial-ShareAlike',
+    description: 'Others can modify your design for non-commercial purposes, must credit you, and must share modifications under the same license.',
+    allows_commercial: false,
+    allows_derivatives: true,
+    requires_attribution: true,
+    requires_sharealike: true,
+    url: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+    badge: 'https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png',
+    icons: ['by', 'nc', 'sa'],
+  },
+  {
+    code: 'CC-BY-ND-4.0',
+    name: 'CC BY-ND 4.0 — Attribution-NoDerivatives',
+    shortName: 'Attribution-NoDerivatives',
+    description: 'Others can download and share your design (including commercially), but cannot modify it. Must credit you.',
+    allows_commercial: true,
+    allows_derivatives: false,
+    requires_attribution: true,
+    requires_sharealike: false,
+    url: 'https://creativecommons.org/licenses/by-nd/4.0/',
+    badge: 'https://licensebuttons.net/l/by-nd/4.0/88x31.png',
+    icons: ['by', 'nd'],
+  },
+  {
+    code: 'CC-BY-NC-ND-4.0',
+    name: 'CC BY-NC-ND 4.0 — Attribution-NonCommercial-NoDerivatives',
+    shortName: 'NonCommercial-NoDerivatives',
+    description: 'Most restrictive. Others can download and share your design, but cannot modify it or use it commercially. Must credit you.',
+    allows_commercial: false,
+    allows_derivatives: false,
+    requires_attribution: true,
+    requires_sharealike: false,
+    url: 'https://creativecommons.org/licenses/by-nc-nd/4.0/',
+    badge: 'https://licensebuttons.net/l/by-nc-nd/4.0/88x31.png',
+    icons: ['by', 'nc', 'nd'],
+  },
+] as const;
+
+export type CCLicenseCode = typeof CC_LICENSES[number]['code'];
+
+export function getLicenseByCode(code: string) {
+  return CC_LICENSES.find((l) => l.code === code) || null;
+}

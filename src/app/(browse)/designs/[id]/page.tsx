@@ -8,6 +8,7 @@ import { DesignFileList } from '@/components/design/DesignFileList';
 import { SuggestionReel } from '@/components/design/SuggestionReel';
 import Link from 'next/link';
 import { formatFileSize } from '@/lib/utils/file-validation';
+import { LicenseBadge } from '@/components/design/LicenseBadge';
 import type { Metadata } from 'next';
 
 interface Props {
@@ -280,6 +281,17 @@ export default async function DesignDetailPage({ params }: Props) {
               </div>
 
               {/* Categories & styles */}
+              {/* License */}
+              <div className="card p-6">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">License</h3>
+                <LicenseBadge
+                  licenseType={design.license_type}
+                  creatorName={design.creator.display_name || design.creator.username}
+                  designTitle={design.title}
+                  variant="full"
+                />
+              </div>
+
               {(categories.length > 0 || styles.length > 0 || tags.length > 0) && (
                 <div className="card p-6">
                   {categories.length > 0 && (

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { createDesignSchema } from '@/lib/validators/design';
 import { uniqueSlug } from '@/lib/utils';
-import { ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE } from '@/lib/utils/constants';
+import { ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE, getLicenseByCode } from '@/lib/utils/constants';
 
 // GET /api/designs — List/search designs
 export async function GET(request: NextRequest) {
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   const style = searchParams.get('style');
   const priceFilter = searchParams.get('price');
   const difficulty = searchParams.get('difficulty');
+  const license = searchParams.get('license');
   const q = searchParams.get('q');
 
   const supabase = createServerSupabaseClient();
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
   if (priceFilter === 'free') query = query.eq('is_free', true);
   if (priceFilter === 'paid') query = query.eq('is_free', false);
   if (difficulty) query = query.eq('difficulty_level', difficulty);
+  if (license) query = query.eq('license_type', license);
 
   // Sorting
   switch (sort) {
@@ -106,6 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Create the design
     const slug = uniqueSlug(designData.title);
+    const licenseInfo = getLicenseByCode(designData.license_type || 'CC-BY-4.0');
     const { data: design, error: createError } = await supabase
       .from('designs')
       .insert({
@@ -113,6 +116,7 @@ export async function POST(request: NextRequest) {
         slug,
         creator_id: user.id,
         status: 'draft',
+        license_url: licenseInfo?.url || 'https://creativecommons.org/licenses/by/4.0/',
       })
       .select()
       .single();

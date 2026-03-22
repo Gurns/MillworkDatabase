@@ -8,6 +8,16 @@ export const dimensionsSchema = z.object({
   unit: z.enum(['in', 'mm', 'cm']),
 });
 
+export const CC_LICENSE_CODES = [
+  'CC0',
+  'CC-BY-4.0',
+  'CC-BY-SA-4.0',
+  'CC-BY-NC-4.0',
+  'CC-BY-NC-SA-4.0',
+  'CC-BY-ND-4.0',
+  'CC-BY-NC-ND-4.0',
+] as const;
+
 export const createDesignSchema = z.object({
   title: z
     .string()
@@ -27,6 +37,7 @@ export const createDesignSchema = z.object({
   difficulty_level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   estimated_build_hours: z.number().int().min(1).max(1000).optional(),
   dimensions_json: dimensionsSchema.optional(),
+  license_type: z.enum(CC_LICENSE_CODES).default('CC-BY-4.0'),
   category_ids: z.array(z.string().uuid()).min(1, 'Select at least one category'),
   style_ids: z.array(z.string().uuid()).default([]),
   tags: z.array(z.string().max(50)).max(20).default([]),
