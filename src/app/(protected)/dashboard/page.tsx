@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getLevelForPoints, LEVELS } from '@/lib/utils/constants';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Dashboard' };
 
 export default async function DashboardPage() {
