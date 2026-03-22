@@ -13,7 +13,16 @@ import {
   formatFileSize,
   getFileTypeFromExtension,
 } from '@/lib/utils/file-validation';
+import { UploadTile, type TileType } from '@/components/upload/UploadTile';
 import type { Category, Style } from '@/types';
+
+interface TileFile {
+  id: string;
+  name: string;
+  url?: string;
+  size?: number;
+  dbType?: string; // the file_type enum value stored in design_files
+}
 
 export default function NewDesignPage() {
   const router = useRouter();
@@ -26,10 +35,22 @@ export default function NewDesignPage() {
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [designId, setDesignId] = useState<string | null>(null);
-  const [uploadedImages, setUploadedImages] = useState<{ id: string; url: string; name: string }[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<{ id: string; name: string; type: string; size: number }[]>([]);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [fileUploading, setFileUploading] = useState(false);
+
+  // Per-tile file state
+  const [tileFiles, setTileFiles] = useState<Record<TileType, TileFile | null>>({
+    profile: null,
+    photo: null,
+    model: null,
+    scan: null,
+    mesh: null,
+  });
+  const [tileUploading, setTileUploading] = useState<Record<TileType, boolean>>({
+    profile: false,
+    photo: false,
+    model: false,
+    scan: false,
+    mesh: false,
+  });
 
   const [form, setForm] = useState({
     title: '',
@@ -76,12 +97,135 @@ export default function NewDesignPage() {
     }));
   }
 
+  // ─── Upload handler per tile ───
+  async function handleTileUpload(tileType: TileType, file: File) {
+    if (!designId) return;
+    setGlobalError(null);
+
+    const isImageTile = tileType === 'profile' || tileType === 'photo';
+
+    // Validate
+    if (isImageTile) {
+      if (!isAllowedImageType(file.type)) {
+        setGlobalError(`${file.name}: Only JPEG, PNG, WebP, and AVIF images are allowed.`);
+        return;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        setGlobalError(`${file.name}: Image must be under ${formatFileSize(MAX_IMAGE_SIZE)}.`);
+        return;
+      }
+    } else {
+      if (!isAllowedModelFile(file.name)) {
+        setGlobalError(`${file.name}: Only STL, STEP, OBJ, PLY, and Fusion 360 files are allowed.`);
+        return;
+      }
+      if (file.size > MAX_MODEL_SIZE) {
+        setGlobalError(`${file.name}: File must be under ${formatFileSize(MAX_MODEL_SIZE)}.`);
+        return;
+      }
+    }
+
+    setTileUploading((prev) => ({ ...prev, [tileType]: true }));
+
+    try {
+      const bucket = isImageTile ? 'design-images' : 'design-models';
+      const filePath = `${designId}/${tileType}-${Date.now()}-${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) {
+        setGlobalError(`Failed to upload ${file.name}: ${uploadError.message}`);
+        return;
+      }
+
+      if (isImageTile) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('design-images')
+          .getPublicUrl(filePath);
+
+        // Save to design_images table
+        const { data: img } = await supabase
+          .from('design_images')
+          .insert({
+            design_id: designId,
+            image_url: publicUrl,
+            alt_text: `${tileType === 'profile' ? '2D Profile' : 'Installed Photo'} - ${file.name}`,
+            display_order: tileType === 'profile' ? 0 : 1,
+          })
+          .select()
+          .single();
+
+        if (img) {
+          setTileFiles((prev) => ({
+            ...prev,
+            [tileType]: { id: img.id, name: file.name, url: publicUrl, size: file.size },
+          }));
+
+          // Set profile image as primary if it's the first image
+          if (tileType === 'profile' || !tileFiles.profile) {
+            await supabase
+              .from('designs')
+              .update({ primary_image_url: publicUrl })
+              .eq('id', designId);
+          }
+        }
+      } else {
+        const fileType = getFileTypeFromExtension(file.name);
+        const { data: fileRecord } = await supabase
+          .from('design_files')
+          .insert({
+            design_id: designId,
+            file_name: file.name,
+            file_path: filePath,
+            file_type: fileType,
+            file_size_bytes: file.size,
+          })
+          .select()
+          .single();
+
+        if (fileRecord) {
+          setTileFiles((prev) => ({
+            ...prev,
+            [tileType]: { id: fileRecord.id, name: file.name, size: file.size, dbType: fileType },
+          }));
+        }
+      }
+    } catch (err) {
+      setGlobalError(`Upload failed for ${file.name}. Please try again.`);
+    } finally {
+      setTileUploading((prev) => ({ ...prev, [tileType]: false }));
+    }
+  }
+
+  async function handleTileRemove(tileType: TileType) {
+    const tf = tileFiles[tileType];
+    if (!tf || !designId) return;
+
+    const isImageTile = tileType === 'profile' || tileType === 'photo';
+    if (isImageTile) {
+      await supabase.from('design_images').delete().eq('id', tf.id);
+    } else {
+      await supabase.from('design_files').delete().eq('id', tf.id);
+    }
+
+    setTileFiles((prev) => ({ ...prev, [tileType]: null }));
+  }
+
+  // ─── Save / Publish ───
   async function handleSaveDraft(e: React.FormEvent) {
     e.preventDefault();
     await saveDesign(false);
   }
 
   async function handlePublish() {
+    // Validate that at least one 3D file (model, scan, or mesh) is present
+    const has3D = tileFiles.model || tileFiles.scan || tileFiles.mesh;
+    if (!has3D) {
+      setGlobalError('At least one 3D file (Model, Scan, or Mesh) is required to publish.');
+      return;
+    }
     await saveDesign(true);
   }
 
@@ -103,7 +247,6 @@ export default function NewDesignPage() {
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     };
 
-    // Build dimensions if any are set
     if (form.dimensions_length || form.dimensions_width || form.dimensions_height) {
       input.dimensions_json = {
         length: form.dimensions_length ? parseFloat(form.dimensions_length) : undefined,
@@ -126,7 +269,6 @@ export default function NewDesignPage() {
       let id = designId;
 
       if (!id) {
-        // Create new design
         const res = await fetch('/api/designs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -140,7 +282,6 @@ export default function NewDesignPage() {
         id = data.design.id;
         setDesignId(id);
       } else {
-        // Update existing
         const res = await fetch(`/api/designs/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -161,6 +302,9 @@ export default function NewDesignPage() {
           return;
         }
         router.push(`/designs/${id}`);
+      } else if (!publish && !designId && id) {
+        // Just saved draft for the first time — stay on page to allow file uploads
+        // designId is now set via setDesignId above
       } else {
         router.push('/dashboard/designs');
       }
@@ -172,115 +316,15 @@ export default function NewDesignPage() {
     }
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || !designId) return;
-
-    setImageUploading(true);
-    for (const file of Array.from(files)) {
-      if (!isAllowedImageType(file.type)) {
-        setGlobalError(`${file.name}: Only JPEG, PNG, WebP, and AVIF images are allowed.`);
-        continue;
-      }
-      if (file.size > MAX_IMAGE_SIZE) {
-        setGlobalError(`${file.name}: Image must be under ${formatFileSize(MAX_IMAGE_SIZE)}.`);
-        continue;
-      }
-
-      const filePath = `${designId}/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage
-        .from('design-images')
-        .upload(filePath, file);
-
-      if (error) {
-        setGlobalError(`Failed to upload ${file.name}: ${error.message}`);
-        continue;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('design-images')
-        .getPublicUrl(filePath);
-
-      // Save to design_images table
-      const { data: img } = await supabase
-        .from('design_images')
-        .insert({
-          design_id: designId,
-          image_url: publicUrl,
-          alt_text: file.name,
-          display_order: uploadedImages.length,
-        })
-        .select()
-        .single();
-
-      if (img) {
-        setUploadedImages((prev) => [...prev, { id: img.id, url: publicUrl, name: file.name }]);
-
-        // Set first image as primary
-        if (uploadedImages.length === 0) {
-          await supabase
-            .from('designs')
-            .update({ primary_image_url: publicUrl })
-            .eq('id', designId);
-        }
-      }
-    }
-    setImageUploading(false);
-    e.target.value = '';
-  }
-
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || !designId) return;
-
-    setFileUploading(true);
-    for (const file of Array.from(files)) {
-      if (!isAllowedModelFile(file.name)) {
-        setGlobalError(`${file.name}: Only STL, STEP, OBJ, PLY, and Fusion 360 files are allowed.`);
-        continue;
-      }
-      if (file.size > MAX_MODEL_SIZE) {
-        setGlobalError(`${file.name}: File must be under ${formatFileSize(MAX_MODEL_SIZE)}.`);
-        continue;
-      }
-
-      const filePath = `${designId}/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage
-        .from('design-models')
-        .upload(filePath, file);
-
-      if (error) {
-        setGlobalError(`Failed to upload ${file.name}: ${error.message}`);
-        continue;
-      }
-
-      const fileType = getFileTypeFromExtension(file.name);
-      const { data: fileRecord } = await supabase
-        .from('design_files')
-        .insert({
-          design_id: designId,
-          file_name: file.name,
-          file_path: filePath,
-          file_type: fileType,
-          file_size_bytes: file.size,
-        })
-        .select()
-        .single();
-
-      if (fileRecord) {
-        setUploadedFiles((prev) => [
-          ...prev,
-          { id: fileRecord.id, name: file.name, type: fileType, size: file.size },
-        ]);
-      }
-    }
-    setFileUploading(false);
-    e.target.value = '';
-  }
+  // Check if we have at least one 3D file
+  const has3DFile = !!(tileFiles.model || tileFiles.scan || tileFiles.mesh);
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-gray-900 mb-6">Upload a New Design</h1>
+      <h1 className="text-2xl font-display font-bold text-gray-900 mb-2">Upload a New Design</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        Share your millwork profile with the community. Upload images and 3D files to help others bring your design to life.
+      </p>
 
       {globalError && (
         <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">{globalError}</div>
@@ -523,68 +567,92 @@ export default function NewDesignPage() {
           )}
         </section>
 
-        {/* File uploads — only after initial save */}
-        {designId && (
-          <>
-            <section className="card p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">Images</h2>
-              <p className="text-sm text-gray-500 mb-4">
-                Upload photos of the installed millwork, profile cross-sections, or renders. At least one image is required to publish.
+        {/* ─── File Upload Tiles ─── */}
+        {designId ? (
+          <section className="card p-6">
+            <h2 className="font-semibold text-gray-900 mb-1">Design Files</h2>
+            <p className="text-sm text-gray-500 mb-2">
+              Upload your millwork files. At least one 3D file (model, scan, or mesh) is required to publish.
+            </p>
+            {!has3DFile && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                You need at least one 3D file (STEP, STL, OBJ, F3D, F3Z, or PLY) to publish this design.
               </p>
+            )}
 
-              {uploadedImages.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
-                  {uploadedImages.map((img) => (
-                    <div key={img.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                      <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* 5-tile grid: 3 on top, 2 on bottom centered */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Row 1: Images + primary 3D model */}
+              <UploadTile
+                type="profile"
+                file={tileFiles.profile ?? undefined}
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                maxSize={MAX_IMAGE_SIZE}
+                uploading={tileUploading.profile}
+                onFileSelect={(f) => handleTileUpload('profile', f)}
+                onRemove={tileFiles.profile ? () => handleTileRemove('profile') : undefined}
+              />
+              <UploadTile
+                type="photo"
+                file={tileFiles.photo ?? undefined}
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                maxSize={MAX_IMAGE_SIZE}
+                uploading={tileUploading.photo}
+                onFileSelect={(f) => handleTileUpload('photo', f)}
+                onRemove={tileFiles.photo ? () => handleTileRemove('photo') : undefined}
+              />
+              <UploadTile
+                type="model"
+                file={tileFiles.model ?? undefined}
+                accept=".step,.stp,.stl,.obj,.f3d,.f3z"
+                required={!has3DFile}
+                maxSize={MAX_MODEL_SIZE}
+                uploading={tileUploading.model}
+                onFileSelect={(f) => handleTileUpload('model', f)}
+                onRemove={tileFiles.model ? () => handleTileRemove('model') : undefined}
+              />
+              {/* Row 2: Scan + Mesh */}
+              <UploadTile
+                type="scan"
+                file={tileFiles.scan ?? undefined}
+                accept=".stl,.obj,.ply"
+                required={!has3DFile}
+                maxSize={MAX_MODEL_SIZE}
+                uploading={tileUploading.scan}
+                onFileSelect={(f) => handleTileUpload('scan', f)}
+                onRemove={tileFiles.scan ? () => handleTileRemove('scan') : undefined}
+              />
+              <UploadTile
+                type="mesh"
+                file={tileFiles.mesh ?? undefined}
+                accept=".stl,.obj"
+                required={!has3DFile}
+                maxSize={MAX_MODEL_SIZE}
+                uploading={tileUploading.mesh}
+                onFileSelect={(f) => handleTileUpload('mesh', f)}
+                onRemove={tileFiles.mesh ? () => handleTileRemove('mesh') : undefined}
+              />
+            </div>
 
-              <label className="inline-flex items-center gap-2 btn-secondary text-sm cursor-pointer">
-                {imageUploading ? 'Uploading...' : 'Add Images'}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/avif"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={imageUploading}
-                />
-              </label>
-            </section>
-
-            <section className="card p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">3D Files</h2>
-              <p className="text-sm text-gray-500 mb-4">
-                Upload STL, STEP, OBJ, PLY, or Fusion 360 files. Max 50MB per file.
-              </p>
-
-              {uploadedFiles.length > 0 && (
-                <div className="space-y-2 mb-4">
-                  {uploadedFiles.map((f) => (
-                    <div key={f.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
-                      <span className="font-medium text-gray-700">{f.name}</span>
-                      <span className="text-gray-400">{formatFileSize(f.size)} · {f.type.toUpperCase()}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <label className="inline-flex items-center gap-2 btn-secondary text-sm cursor-pointer">
-                {fileUploading ? 'Uploading...' : 'Add 3D Files'}
-                <input
-                  type="file"
-                  accept=".stl,.step,.stp,.obj,.ply,.f3d,.f3z"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={fileUploading}
-                />
-              </label>
-            </section>
-          </>
+            <p className="text-xs text-gray-400 mt-4">
+              Images: JPEG, PNG, WebP (max 10 MB) · 3D files: STEP, STL, OBJ, PLY, Fusion 360 (max 50 MB)
+            </p>
+          </section>
+        ) : (
+          <section className="card p-6">
+            <h2 className="font-semibold text-gray-900 mb-2">Design Files</h2>
+            <p className="text-sm text-gray-500">
+              Save as draft first, then you&apos;ll be able to upload your 2D profiles, photos, 3D models, scans, and mesh files.
+            </p>
+            {/* Preview the tile layout in disabled state */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 opacity-40 pointer-events-none">
+              <UploadTile type="profile" accept="" onFileSelect={() => {}} />
+              <UploadTile type="photo" accept="" onFileSelect={() => {}} />
+              <UploadTile type="model" accept="" required onFileSelect={() => {}} />
+              <UploadTile type="scan" accept="" required onFileSelect={() => {}} />
+              <UploadTile type="mesh" accept="" required onFileSelect={() => {}} />
+            </div>
+          </section>
         )}
 
         {/* Actions */}
@@ -600,19 +668,13 @@ export default function NewDesignPage() {
             <button
               type="button"
               onClick={handlePublish}
-              disabled={loading}
-              className="btn-primary"
+              disabled={loading || !has3DFile}
+              className={`btn-primary ${!has3DFile ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {publishing ? 'Publishing...' : 'Publish Design'}
             </button>
           )}
         </div>
-
-        {!designId && (
-          <p className="text-sm text-gray-500">
-            Save as draft first, then you can upload images and 3D files.
-          </p>
-        )}
       </form>
     </div>
   );

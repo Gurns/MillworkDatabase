@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { registerSchema } from '@/lib/validators/auth';
 import { slugify } from '@/lib/utils';
 
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { email, password, username, display_name } = validated.data;
     const supabase = createServerSupabaseClient();
 
-    // Check if username is already taken
+    // Check if username is already taken (anon client is fine for SELECT)
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
@@ -58,8 +58,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create public user profile
-    const { error: profileError } = await supabase.from('users').insert({
+    // Create public user profile using service role client.
+    // The anon client can't insert here because auth.uid() is null —
+    // the user hasn't confirmed their email yet, so no session exists.
+    const serviceClient = createServiceRoleClient();
+    const { error: profileError } = await serviceClient.from('users').insert({
       id: authData.user.id,
       username,
       email,
