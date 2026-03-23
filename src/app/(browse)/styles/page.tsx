@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { StyleStreetScene } from '@/components/explore/StyleStreetScene';
+import { StyleImagePicker } from '@/components/explore/StyleImagePicker';
 import { ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export default function StylesIndexPage() {
 
           {/* Interactive street scene */}
           <div className="mb-12">
-            <StyleStreetScene />
+            <StyleImagePicker />
           </div>
 
           {/* Detailed cards grid */}

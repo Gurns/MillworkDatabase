@@ -1,6 +1,8 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DesignGrid } from '@/components/design/DesignGrid';
+import { StyleImagePicker } from '@/components/explore/StyleImagePicker';
+import { ArchitecturalExplorer } from '@/components/explore/ArchitecturalExplorer';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -95,6 +97,22 @@ export default async function BrowseDesignsPage({ searchParams }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Browse by Architectural Style */}
+          <section className="mb-8">
+            <h2 className="text-lg font-display font-bold text-gray-900 mb-2">
+              Browse by Architectural Style
+            </h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Click any house to find designs that match its style.
+            </p>
+            <StyleImagePicker />
+          </section>
+
+          {/* Interactive Architectural Explorer */}
+          <section className="mb-8">
+            <ArchitecturalExplorer />
+          </section>
 
           {/* Price filter pills */}
           <div className="flex gap-2 mb-6">

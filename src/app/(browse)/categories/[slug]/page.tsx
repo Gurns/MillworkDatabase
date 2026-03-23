@@ -1,6 +1,8 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DesignGrid } from '@/components/design/DesignGrid';
+import { StyleImagePicker } from '@/components/explore/StyleImagePicker';
+import { ArchitecturalExplorer } from '@/components/explore/ArchitecturalExplorer';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -112,6 +114,22 @@ export default async function CategoryBrowsePage({ params, searchParams }: Props
               {count || 0} design{count !== 1 ? 's' : ''} found
             </p>
           </div>
+
+          {/* Browse by Architectural Style */}
+          <section className="mb-8">
+            <h2 className="text-lg font-display font-bold text-gray-900 mb-2">
+              Browse by Architectural Style
+            </h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Click any house to find {category.name.toLowerCase()} designs that match its style.
+            </p>
+            <StyleImagePicker />
+          </section>
+
+          {/* Interactive Architectural Explorer */}
+          <section className="mb-8">
+            <ArchitecturalExplorer />
+          </section>
 
           {/* Sort and filters */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

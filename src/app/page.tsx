@@ -3,7 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { SuggestionReel } from '@/components/design/SuggestionReel';
 import { ArchitecturalExplorer } from '@/components/explore/ArchitecturalExplorer';
-import { StyleStreetScene } from '@/components/explore/StyleStreetScene';
+import { StyleImagePicker } from '@/components/explore/StyleImagePicker';
 import { MAIN_CATEGORIES, ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 export default function HomePage() {
@@ -67,8 +67,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ★ FEATURED: Interactive Architectural Explorer ★ */}
-        <ArchitecturalExplorer />
+        {/* ★ Architectural Style Picker (image-based) ★ */}
+        <section className="py-12 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-2">
+              Browse by Architectural Style
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Click any house to find millwork designs that match its style.
+            </p>
+            <StyleImagePicker />
+          </div>
+        </section>
 
         {/* Categories Grid */}
         <section className="py-16 bg-gray-50">
@@ -95,18 +105,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Styles Street Scene */}
-        <section className="py-16 bg-wood-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-2">
-              Browse by Architectural Style
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Scroll through our neighborhood of styles. Click any house to find matching millwork.
-            </p>
-            <StyleStreetScene />
-          </div>
-        </section>
+        {/* ★ Interactive Architectural Explorer ★ */}
+        <ArchitecturalExplorer />
 
         {/* Suggestion Reels */}
         <section className="py-8 bg-white">
