@@ -74,6 +74,9 @@ export function Header() {
             <Link href="/cnc-providers" className="btn-ghost text-sm">
               CNC Services
             </Link>
+            <Link href="/guides/digitizing-3d-scans" className="btn-ghost text-sm">
+              Guides
+            </Link>
           </nav>
 
           {/* Search (desktop) */}
@@ -234,6 +237,9 @@ export function Header() {
             </Link>
             <Link href="/cnc-providers" className="block py-2 text-sm text-gray-700 hover:text-brand-600" onClick={() => setMobileMenuOpen(false)}>
               CNC Services
+            </Link>
+            <Link href="/guides/digitizing-3d-scans" className="block py-2 text-sm text-gray-700 hover:text-brand-600" onClick={() => setMobileMenuOpen(false)}>
+              Digitizing Guide
             </Link>
           </div>
         )}
