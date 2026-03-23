@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 
@@ -51,7 +51,29 @@ interface StyleImagePickerProps {
   compact?: boolean;
 }
 
-export function StyleImagePicker({ activeStyle, filterMode = false, compact = false }: StyleImagePickerProps) {
+export function StyleImagePicker(props: StyleImagePickerProps) {
+  return (
+    <Suspense fallback={<StyleImagePickerFallback compact={props.compact} />}>
+      <StyleImagePickerInner {...props} />
+    </Suspense>
+  );
+}
+
+/** Lightweight placeholder while Suspense resolves useSearchParams */
+function StyleImagePickerFallback({ compact }: { compact?: boolean }) {
+  return (
+    <div className={`relative select-none rounded-xl overflow-hidden shadow-md ${compact ? 'max-w-xl' : ''}`}>
+      <img
+        src="/images/architectural-styles-street.png"
+        alt="A street scene showing homes in 16 different architectural styles"
+        className="w-full block"
+        draggable={false}
+      />
+    </div>
+  );
+}
+
+function StyleImagePickerInner({ activeStyle, filterMode = false, compact = false }: StyleImagePickerProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();

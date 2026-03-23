@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { Suspense, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
@@ -38,7 +38,15 @@ interface ArchitecturalExplorerProps {
   filterMode?: boolean;
 }
 
-export function ArchitecturalExplorer({ compact = false, filterMode = false }: ArchitecturalExplorerProps) {
+export function ArchitecturalExplorer(props: ArchitecturalExplorerProps) {
+  return (
+    <Suspense fallback={<div className="bg-gray-50 rounded-2xl border border-gray-200 animate-pulse" style={{ minHeight: props.compact ? 300 : 500 }} />}>
+      <ArchitecturalExplorerInner {...props} />
+    </Suspense>
+  );
+}
+
+function ArchitecturalExplorerInner({ compact = false, filterMode = false }: ArchitecturalExplorerProps) {
   const [activeView, setActiveView] = useState<DiagramView>('entablature');
   const [activeStyle, setActiveStyle] = useState<InteractiveStyle>('Classical');
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
