@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { StyleStreetScene } from '@/components/explore/StyleStreetScene';
 import { ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 export const metadata: Metadata = {
@@ -28,38 +31,51 @@ const STYLE_DESCRIPTIONS: Record<string, string> = {
 
 export default function StylesIndexPage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Browse by Architectural Style</h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Find millwork designs that match your project&apos;s architectural character. Each style
-          represents a distinct design tradition with its own proportions, details, and materials.
-        </p>
-      </div>
+    <>
+      <Header />
+      <main className="flex-1 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-display font-bold text-gray-900 mb-4">Browse by Architectural Style</h1>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Scroll through our neighborhood of architectural styles. Click any house to explore
+              millwork designs that match its character.
+            </p>
+          </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ARCHITECTURAL_STYLES.map((style) => {
-          const slug = style.toLowerCase().replace(/[\s&]+/g, '-').replace(/['']/g, '');
-          const description = STYLE_DESCRIPTIONS[slug] || 'Explore designs in this architectural style.';
-          return (
-            <Link
-              key={style}
-              href={`/styles/${slug}`}
-              className="group block bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all"
-            >
-              <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
-                {style}
-              </h2>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                {description}
-              </p>
-              <span className="inline-block mt-4 text-sm text-blue-600 font-medium group-hover:translate-x-1 transition-transform">
-                Browse designs &rarr;
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+          {/* Interactive street scene */}
+          <div className="mb-12">
+            <StyleStreetScene />
+          </div>
+
+          {/* Detailed cards grid */}
+          <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">All Styles</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {ARCHITECTURAL_STYLES.map((style) => {
+              const slug = style.toLowerCase().replace(/[\s&]+/g, '-').replace(/['']/g, '');
+              const description = STYLE_DESCRIPTIONS[slug] || 'Explore designs in this architectural style.';
+              return (
+                <Link
+                  key={style}
+                  href={`/styles/${slug}`}
+                  className="group block bg-white border border-gray-200 rounded-lg p-6 hover:border-brand-300 hover:shadow-md transition-all"
+                >
+                  <h3 className="text-xl font-semibold text-gray-900 group-hover:text-brand-600 transition-colors mb-2">
+                    {style}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {description}
+                  </p>
+                  <span className="inline-block mt-4 text-sm text-brand-600 font-medium group-hover:translate-x-1 transition-transform">
+                    Browse designs &rarr;
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }

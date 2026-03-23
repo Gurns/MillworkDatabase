@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { SuggestionReel } from '@/components/design/SuggestionReel';
 import { ArchitecturalExplorer } from '@/components/explore/ArchitecturalExplorer';
+import { StyleStreetScene } from '@/components/explore/StyleStreetScene';
 import { MAIN_CATEGORIES, ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 export default function HomePage() {
@@ -94,26 +95,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Styles Section */}
+        {/* Styles Street Scene */}
         <section className="py-16 bg-wood-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-2">
               Browse by Architectural Style
             </h2>
-            <p className="text-gray-600 mb-8">
-              Find millwork that matches your home&apos;s character.
+            <p className="text-gray-600 mb-6">
+              Scroll through our neighborhood of styles. Click any house to find matching millwork.
             </p>
-            <div className="flex flex-wrap gap-3">
-              {ARCHITECTURAL_STYLES.map((style) => (
-                <Link
-                  key={style}
-                  href={`/styles/${style.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="px-4 py-2 bg-white rounded-full text-sm font-medium text-gray-700 border border-gray-200 hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50 transition-colors"
-                >
-                  {style}
-                </Link>
-              ))}
-            </div>
+            <StyleStreetScene />
           </div>
         </section>
 
