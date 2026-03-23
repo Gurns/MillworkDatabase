@@ -4,6 +4,7 @@ import { Suspense, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
+import { ImageEntablatureDiagram } from './ImageEntablatureDiagram';
 
 // ─── Types ───
 type DiagramView = 'entablature' | 'column' | 'window' | 'staircase' | 'ceiling';
@@ -120,7 +121,9 @@ function ArchitecturalExplorerInner({ compact = false, filterMode = false }: Arc
         <div className="relative bg-gray-50 overflow-hidden" style={{ minHeight: 300 }}>
           <div className="transition-opacity duration-500">
             {activeView === 'entablature' && (
-              <EntablatureDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+              <div className="p-4">
+                <ImageEntablatureDiagram buildHref={buildCategoryHref} />
+              </div>
             )}
             {activeView === 'column' && (
               <ColumnDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
@@ -192,7 +195,9 @@ function ArchitecturalExplorerInner({ compact = false, filterMode = false }: Arc
         <div className="relative bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden" style={{ minHeight: 500 }}>
           <div className="transition-opacity duration-500">
             {activeView === 'entablature' && (
-              <EntablatureDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+              <div className="p-4">
+                <ImageEntablatureDiagram buildHref={buildCategoryHref} />
+              </div>
             )}
             {activeView === 'column' && (
               <ColumnDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
