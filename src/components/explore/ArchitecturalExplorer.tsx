@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ARCHITECTURAL_STYLES } from '@/lib/utils/constants';
 
 // ─── Types ───
@@ -27,10 +28,22 @@ const INTERACTIVE_STYLES = [
 type InteractiveStyle = typeof INTERACTIVE_STYLES[number];
 
 // ─── Main Component ───
-export function ArchitecturalExplorer() {
+interface ArchitecturalExplorerProps {
+  /** Compact mode for sub-pages — smaller diagram, no outer padding */
+  compact?: boolean;
+  /**
+   * When true, clicking a diagram element appends ?category=slug to
+   * the current URL instead of navigating to /categories/{slug}.
+   */
+  filterMode?: boolean;
+}
+
+export function ArchitecturalExplorer({ compact = false, filterMode = false }: ArchitecturalExplorerProps) {
   const [activeView, setActiveView] = useState<DiagramView>('entablature');
   const [activeStyle, setActiveStyle] = useState<InteractiveStyle>('Classical');
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const views: { key: DiagramView; label: string; icon: string }[] = [
     { key: 'entablature', label: 'Entablature', icon: '🏛️' },
@@ -39,6 +52,85 @@ export function ArchitecturalExplorer() {
     { key: 'staircase', label: 'Stair Parts', icon: '🪜' },
     { key: 'ceiling', label: 'Ceiling & Wall', icon: '🏠' },
   ];
+
+  /** Build link for clickable region: filter mode or navigate mode */
+  function buildCategoryHref(slug: string): string {
+    if (!filterMode) {
+      return `/categories/${slug}`;
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get('element') === slug) {
+      params.delete('element');
+    } else {
+      params.set('element', slug);
+    }
+    params.delete('page');
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  if (compact) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-3 py-2 border-b border-gray-100">
+          <h3 className="text-sm font-display font-bold text-gray-900">Architectural Elements</h3>
+        </div>
+        {/* Style selector — compact pills */}
+        <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-gray-100">
+          {INTERACTIVE_STYLES.map((style) => (
+            <button
+              key={style}
+              onClick={() => setActiveStyle(style)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                activeStyle === style
+                  ? 'bg-wood-800 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
+        {/* View tabs — compact */}
+        <div className="flex gap-0.5 px-3 py-1.5 overflow-x-auto border-b border-gray-100">
+          {views.map((v) => (
+            <button
+              key={v.key}
+              onClick={() => setActiveView(v.key)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-all ${
+                activeView === v.key
+                  ? 'bg-brand-600 text-white'
+                  : 'text-gray-500 hover:text-brand-600 hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-xs">{v.icon}</span>
+              {v.label}
+            </button>
+          ))}
+        </div>
+        {/* Compact diagram */}
+        <div className="relative bg-gray-50 overflow-hidden" style={{ minHeight: 300 }}>
+          <div className="transition-opacity duration-500">
+            {activeView === 'entablature' && (
+              <EntablatureDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+            )}
+            {activeView === 'column' && (
+              <ColumnDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+            )}
+            {activeView === 'window' && (
+              <WindowDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+            )}
+            {activeView === 'staircase' && (
+              <StaircaseDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+            )}
+            {activeView === 'ceiling' && (
+              <CeilingWallDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section className="py-16 bg-white">
@@ -92,19 +184,19 @@ export function ArchitecturalExplorer() {
         <div className="relative bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden" style={{ minHeight: 500 }}>
           <div className="transition-opacity duration-500">
             {activeView === 'entablature' && (
-              <EntablatureDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} />
+              <EntablatureDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
             )}
             {activeView === 'column' && (
-              <ColumnDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} />
+              <ColumnDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
             )}
             {activeView === 'window' && (
-              <WindowDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} />
+              <WindowDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
             )}
             {activeView === 'staircase' && (
-              <StaircaseDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} />
+              <StaircaseDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
             )}
             {activeView === 'ceiling' && (
-              <CeilingWallDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} />
+              <CeilingWallDiagram style={activeStyle} hoveredElement={hoveredElement} onHover={setHoveredElement} buildHref={buildCategoryHref} />
             )}
           </div>
 
@@ -124,6 +216,8 @@ interface DiagramProps {
   style: InteractiveStyle;
   hoveredElement: string | null;
   onHover: (id: string | null) => void;
+  /** Function to build href — supports navigate or filter mode */
+  buildHref: (slug: string) => string;
 }
 
 function ClickableRegion({
@@ -134,6 +228,7 @@ function ClickableRegion({
   onHover,
   labelX,
   labelY,
+  buildHref,
 }: {
   slug: string;
   label: string;
@@ -142,9 +237,11 @@ function ClickableRegion({
   onHover: (id: string | null) => void;
   labelX: number;
   labelY: number;
+  buildHref?: (slug: string) => string;
 }) {
+  const href = buildHref ? buildHref(slug) : `/categories/${slug}`;
   return (
-    <Link href={`/categories/${slug}`}>
+    <Link href={href} scroll={false}>
       <g
         className="cursor-pointer"
         onMouseEnter={() => onHover(slug)}
@@ -195,7 +292,7 @@ function getStyleConfig(style: InteractiveStyle) {
 // ═══════════════════════════════════════════════════════
 // ENTABLATURE DIAGRAM
 // ═══════════════════════════════════════════════════════
-function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
+function EntablatureDiagram({ style, hoveredElement, onHover, buildHref }: DiagramProps) {
   const cfg = getStyleConfig(style);
 
   // Style-specific ornament details
@@ -216,6 +313,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── CORNICE (top section) ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="cornice"
           label="Cornice"
           hovered={hoveredElement === 'cornice'}
@@ -239,6 +337,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
         {/* ── DENTILS ── */}
         {hasDentils && (
           <ClickableRegion
+          buildHref={buildHref}
             slug="dentils"
             label="Dentils"
             hovered={hoveredElement === 'dentils'}
@@ -267,6 +366,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
         {/* ── MODILLIONS ── */}
         {hasModillions && (
           <ClickableRegion
+          buildHref={buildHref}
             slug="modillions"
             label="Modillions"
             hovered={hoveredElement === 'modillions'}
@@ -306,6 +406,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
           const friezeY = hasDentils && hasModillions ? 140 : hasDentils ? 112 : hasModillions ? 120 : 92;
           return (
             <ClickableRegion
+          buildHref={buildHref}
               slug="frieze"
               label="Frieze"
               hovered={hoveredElement === 'frieze'}
@@ -361,6 +462,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
           const architraveY = hasDentils && hasModillions ? 205 : hasDentils ? 177 : hasModillions ? 185 : 157;
           return (
             <ClickableRegion
+          buildHref={buildHref}
               slug="architrave"
               label="Architrave"
               hovered={hoveredElement === 'architrave'}
@@ -382,6 +484,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
           const capY = hasDentils && hasModillions ? 250 : hasDentils ? 222 : hasModillions ? 230 : 202;
           return (
             <ClickableRegion
+          buildHref={buildHref}
               slug="column-capitals"
               label="Capital"
               hovered={hoveredElement === 'column-capitals'}
@@ -451,7 +554,7 @@ function EntablatureDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 // ═══════════════════════════════════════════════════════
 // COLUMN DIAGRAM
 // ═══════════════════════════════════════════════════════
-function ColumnDiagram({ style, hoveredElement, onHover }: DiagramProps) {
+function ColumnDiagram({ style, hoveredElement, onHover, buildHref }: DiagramProps) {
   const cfg = getStyleConfig(style);
 
   const isFluted = style !== 'Craftsman';
@@ -467,6 +570,7 @@ function ColumnDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── CAPITAL ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="column-capitals"
           label="Capital"
           hovered={hoveredElement === 'column-capitals'}
@@ -521,6 +625,7 @@ function ColumnDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── SHAFT ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="column-shafts"
           label="Shaft"
           hovered={hoveredElement === 'column-shafts'}
@@ -562,6 +667,7 @@ function ColumnDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── BASE ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="column-bases"
           label="Base"
           hovered={hoveredElement === 'column-bases'}
@@ -583,6 +689,7 @@ function ColumnDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── PILASTER hint ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="pilasters"
           label="Pilaster"
           hovered={hoveredElement === 'pilasters'}
@@ -611,7 +718,7 @@ function ColumnDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 // ═══════════════════════════════════════════════════════
 // WINDOW / DOORWAY DIAGRAM
 // ═══════════════════════════════════════════════════════
-function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
+function WindowDiagram({ style, hoveredElement, onHover, buildHref }: DiagramProps) {
   const cfg = getStyleConfig(style);
   const hasArch = style === 'Classical' || style === 'Gothic Revival' || style === 'Victorian';
   const isPointed = style === 'Gothic Revival';
@@ -632,6 +739,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── PEDIMENT ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="pediments"
           label="Pediment"
           hovered={hoveredElement === 'pediments'}
@@ -657,6 +765,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── LINTEL ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="lintels"
           label="Lintel"
           hovered={hoveredElement === 'lintels'}
@@ -670,16 +779,17 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── ARCHITRAVE (surround) ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="door-window-architraves"
-          label="Architrave"
+          label="Casing"
           hovered={hoveredElement === 'door-window-architraves'}
           onHover={onHover}
           labelX={80}
           labelY={200}
         >
-          {/* Left casing */}
+          {/* Left casing (side of window frame) */}
           <rect x={wx - 20} y={wy + 18} width="20" height={wh} fill={cfg.fillColor} stroke={cfg.strokeColor} strokeWidth="2.5" />
-          {/* Right casing */}
+          {/* Right casing (side of window frame) */}
           <rect x={wx + ww} y={wy + 18} width="20" height={wh} fill={cfg.fillColor} stroke={cfg.strokeColor} strokeWidth="2.5" />
 
           {style === 'Victorian' && (
@@ -697,6 +807,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
         {/* ── FANLIGHT / TRANSOM ── */}
         {hasFanlight && (
           <ClickableRegion
+          buildHref={buildHref}
             slug="transoms-and-fanlights"
             label="Fanlight"
             hovered={hoveredElement === 'transoms-and-fanlights'}
@@ -723,6 +834,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── MULLIONS ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="mullions-and-muntins"
           label="Mullions"
           hovered={hoveredElement === 'mullions-and-muntins'}
@@ -741,6 +853,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
         {/* ── KEYSTONE (if arched) ── */}
         {hasArch && (
           <ClickableRegion
+          buildHref={buildHref}
             slug="keystones"
             label="Keystone"
             hovered={hoveredElement === 'keystones'}
@@ -759,6 +872,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── SILL ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="sills-and-aprons"
           label="Sill & Apron"
           hovered={hoveredElement === 'sills-and-aprons'}
@@ -786,7 +900,7 @@ function WindowDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 // ═══════════════════════════════════════════════════════
 // STAIRCASE DIAGRAM
 // ═══════════════════════════════════════════════════════
-function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
+function StaircaseDiagram({ style, hoveredElement, onHover, buildHref }: DiagramProps) {
   const cfg = getStyleConfig(style);
   const isTurned = style === 'Classical' || style === 'Victorian';
   const isSquare = style === 'Craftsman' || style === 'Art Deco';
@@ -805,6 +919,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── STRINGER ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="stringers"
           label="Stringer"
           hovered={hoveredElement === 'stringers'}
@@ -839,6 +954,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── TREAD BRACKETS ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="tread-brackets"
           label="Tread Bracket"
           hovered={hoveredElement === 'tread-brackets'}
@@ -864,6 +980,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── NEWEL POST ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="newel-posts"
           label="Newel Post"
           hovered={hoveredElement === 'newel-posts'}
@@ -900,6 +1017,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── BALUSTERS ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="balusters"
           label="Balusters"
           hovered={hoveredElement === 'balusters'}
@@ -929,6 +1047,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── HANDRAIL ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="handrails"
           label="Handrail"
           hovered={hoveredElement === 'handrails'}
@@ -961,6 +1080,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
         {/* ── VOLUTE (at bottom of handrail) ── */}
         {isTurned && (
           <ClickableRegion
+          buildHref={buildHref}
             slug="volutes-and-scrolls"
             label="Volute"
             hovered={hoveredElement === 'volutes-and-scrolls'}
@@ -991,7 +1111,7 @@ function StaircaseDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 // ═══════════════════════════════════════════════════════
 // CEILING & WALL DIAGRAM
 // ═══════════════════════════════════════════════════════
-function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
+function CeilingWallDiagram({ style, hoveredElement, onHover, buildHref }: DiagramProps) {
   const cfg = getStyleConfig(style);
 
   return (
@@ -1009,6 +1129,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── COFFERS ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="coffered-panels"
           label="Coffered Panel"
           hovered={hoveredElement === 'coffered-panels'}
@@ -1053,6 +1174,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── CEILING MEDALLION ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="ceiling-medallions"
           label="Medallion"
           hovered={hoveredElement === 'ceiling-medallions'}
@@ -1082,6 +1204,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── COVE MOLDING (ceiling-wall junction) ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="soffits-and-coves"
           label="Cove / Soffit"
           hovered={hoveredElement === 'soffits-and-coves'}
@@ -1100,6 +1223,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── CROWN MOLDING ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="crown-molding"
           label="Crown Molding"
           hovered={hoveredElement === 'crown-molding'}
@@ -1114,6 +1238,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── WAINSCOTING ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="wainscoting-and-paneling"
           label="Wainscoting"
           hovered={hoveredElement === 'wainscoting-and-paneling'}
@@ -1154,6 +1279,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── DADO RAIL ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="dado-rails"
           label="Dado Rail"
           hovered={hoveredElement === 'dado-rails'}
@@ -1167,6 +1293,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── NICHE ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="niches-and-alcoves"
           label="Niche"
           hovered={hoveredElement === 'niches-and-alcoves'}
@@ -1204,6 +1331,7 @@ function CeilingWallDiagram({ style, hoveredElement, onHover }: DiagramProps) {
 
         {/* ── BASEBOARD ── */}
         <ClickableRegion
+          buildHref={buildHref}
           slug="baseboards"
           label="Baseboard"
           hovered={hoveredElement === 'baseboards'}

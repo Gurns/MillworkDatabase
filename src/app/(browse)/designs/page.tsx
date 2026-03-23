@@ -44,6 +44,23 @@ export default async function BrowseDesignsPage({ searchParams }: Props) {
   if (searchParams.price === 'free') query = query.eq('is_free', true);
   if (searchParams.price === 'paid') query = query.eq('is_free', false);
 
+  // Narrow by architectural style if ?style= is set
+  if (searchParams.style) {
+    const { data: styleRow } = await supabase
+      .from('styles')
+      .select('id')
+      .eq('slug', searchParams.style)
+      .single();
+    if (styleRow) {
+      const { data: styleDesigns } = await supabase
+        .from('design_styles')
+        .select('design_id')
+        .eq('style_id', styleRow.id);
+      const styleDesignIds = styleDesigns?.map((sd) => sd.design_id) || [];
+      query = query.in('id', styleDesignIds.length > 0 ? styleDesignIds : ['00000000-0000-0000-0000-000000000000']);
+    }
+  }
+
   switch (sort) {
     case 'popular': query = query.order('favorite_count', { ascending: false }); break;
     case 'most_downloaded': query = query.order('download_count', { ascending: false }); break;
@@ -74,6 +91,12 @@ export default async function BrowseDesignsPage({ searchParams }: Props) {
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 {count || 0} design{count !== 1 ? 's' : ''} found
+                {searchParams.style && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-xs font-medium">
+                    Style: {searchParams.style.replace(/-/g, ' ')}
+                    <a href={`/designs?sort=${sort}${searchParams.price ? `&price=${searchParams.price}` : ''}${searchParams.q ? `&q=${searchParams.q}` : ''}`} className="ml-1 text-amber-500 hover:text-amber-700">&times;</a>
+                  </span>
+                )}
               </p>
             </div>
 
@@ -98,21 +121,18 @@ export default async function BrowseDesignsPage({ searchParams }: Props) {
             </div>
           </div>
 
-          {/* Browse by Architectural Style */}
-          <section className="mb-8">
-            <h2 className="text-lg font-display font-bold text-gray-900 mb-2">
-              Browse by Architectural Style
-            </h2>
-            <p className="text-sm text-gray-600 mb-3">
-              Click any house to find designs that match its style.
-            </p>
-            <StyleImagePicker />
-          </section>
-
-          {/* Interactive Architectural Explorer */}
-          <section className="mb-8">
-            <ArchitecturalExplorer />
-          </section>
+          {/* Narrow by Style & Architectural Element — compact, side-by-side on lg */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+            <div>
+              <h2 className="text-sm font-display font-bold text-gray-900 mb-1.5">
+                Narrow by Style
+              </h2>
+              <StyleImagePicker compact filterMode activeStyle={searchParams.style} />
+            </div>
+            <div>
+              <ArchitecturalExplorer compact filterMode />
+            </div>
+          </div>
 
           {/* Price filter pills */}
           <div className="flex gap-2 mb-6">

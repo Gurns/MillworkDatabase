@@ -115,21 +115,18 @@ export default async function StyleBrowsePage({ params, searchParams }: Props) {
             </p>
           </div>
 
-          {/* Browse by Architectural Style — current style highlighted */}
-          <section className="mb-8">
-            <h2 className="text-lg font-display font-bold text-gray-900 mb-2">
-              Browse by Architectural Style
-            </h2>
-            <p className="text-sm text-gray-600 mb-3">
-              Click any house to switch styles.
-            </p>
-            <StyleImagePicker activeStyle={style.slug} />
-          </section>
-
-          {/* Interactive Architectural Explorer */}
-          <section className="mb-8">
-            <ArchitecturalExplorer />
-          </section>
+          {/* Narrow by Style & Architectural Element — compact, side-by-side on lg */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+            <div>
+              <h2 className="text-sm font-display font-bold text-gray-900 mb-1.5">
+                Switch Style
+              </h2>
+              <StyleImagePicker activeStyle={style.slug} compact />
+            </div>
+            <div>
+              <ArchitecturalExplorer compact filterMode />
+            </div>
+          </div>
 
           {/* Sort and filters */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

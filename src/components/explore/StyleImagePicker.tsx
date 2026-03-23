@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 // ─── Style regions mapped to the two-row street scene image ───
 // The image has two rows of houses stacked vertically.
@@ -11,7 +12,6 @@ import Link from 'next/link';
 interface StyleRegion {
   style: string;
   slug: string;
-  // Percentage-based coordinates within the full image
   top: number;     // % from top
   left: number;    // % from left
   width: number;   // % width
@@ -42,13 +42,41 @@ const STYLE_REGIONS: StyleRegion[] = [
 interface StyleImagePickerProps {
   /** Currently active / selected style slug, if any */
   activeStyle?: string;
+  /**
+   * When true, clicking a style adds/replaces ?style=slug on the current path
+   * instead of navigating to /styles/{slug}. Used on sub-pages to narrow results.
+   */
+  filterMode?: boolean;
+  /** Compact display for embedding in sub-pages */
+  compact?: boolean;
 }
 
-export function StyleImagePicker({ activeStyle }: StyleImagePickerProps) {
+export function StyleImagePicker({ activeStyle, filterMode = false, compact = false }: StyleImagePickerProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  /** Build the href for a region: either navigate or filter */
+  function buildHref(slug: string): string {
+    if (!filterMode) {
+      return `/styles/${slug}`;
+    }
+    // Filter mode: toggle style param on the current path
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get('style') === slug) {
+      // clicking the same style again clears the filter
+      params.delete('style');
+    } else {
+      params.set('style', slug);
+    }
+    // Reset to page 1 when changing style filter
+    params.delete('page');
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
 
   return (
-    <div className="relative select-none rounded-xl overflow-hidden shadow-md">
+    <div className={`relative select-none rounded-xl overflow-hidden shadow-md ${compact ? 'max-w-xl' : ''}`}>
       {/* The actual image */}
       <img
         src="/images/architectural-styles-street.png"
@@ -65,7 +93,8 @@ export function StyleImagePicker({ activeStyle }: StyleImagePickerProps) {
         return (
           <Link
             key={region.slug}
-            href={`/styles/${region.slug}`}
+            href={buildHref(region.slug)}
+            scroll={false}
             className="absolute block"
             style={{
               top: `${region.top}%`,
@@ -94,7 +123,7 @@ export function StyleImagePicker({ activeStyle }: StyleImagePickerProps) {
               }}
             />
 
-            {/* Slight scale-up brightness on hover via pseudo-brightness */}
+            {/* Slight brightness on hover */}
             {isHovered && !isActive && (
               <div
                 className="absolute inset-0 pointer-events-none mix-blend-soft-light"
@@ -105,7 +134,7 @@ export function StyleImagePicker({ activeStyle }: StyleImagePickerProps) {
             {/* Active selection badge */}
             {isActive && (
               <div className="absolute top-1 left-1/2 -translate-x-1/2 z-10">
-                <div className="bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                <div className={`bg-amber-500 text-white font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap ${compact ? 'text-[7px]' : 'text-[9px]'}`}>
                   {region.style}
                 </div>
               </div>
@@ -114,8 +143,8 @@ export function StyleImagePicker({ activeStyle }: StyleImagePickerProps) {
             {/* Hover tooltip */}
             {isHovered && !isActive && (
               <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-                <div className="bg-gradient-to-t from-black/50 to-transparent pt-6 pb-1.5 px-1">
-                  <p className="text-white text-[10px] font-semibold text-center drop-shadow-lg leading-tight">
+                <div className={`bg-gradient-to-t from-black/50 to-transparent px-1 ${compact ? 'pt-3 pb-0.5' : 'pt-6 pb-1.5'}`}>
+                  <p className={`text-white font-semibold text-center drop-shadow-lg leading-tight ${compact ? 'text-[8px]' : 'text-[10px]'}`}>
                     {region.style}
                   </p>
                 </div>
