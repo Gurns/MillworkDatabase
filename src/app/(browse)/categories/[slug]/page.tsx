@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { DesignGrid } from '@/components/design/DesignGrid';
 import { StyleImagePicker } from '@/components/explore/StyleImagePicker';
 import { ArchitecturalExplorer } from '@/components/explore/ArchitecturalExplorer';
+import { CarvingTypesWrapper } from '@/components/explore/CarvingTypesWrapper';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -163,6 +164,11 @@ export default async function CategoryBrowsePage({ params, searchParams }: Props
             <div>
               <ArchitecturalExplorer compact filterMode />
             </div>
+          </div>
+
+          {/* Carving Types Carousel */}
+          <div className="mb-8">
+            <CarvingTypesWrapper activeCarvingType={searchParams.element} />
           </div>
 
           {/* Sort and filters */}
