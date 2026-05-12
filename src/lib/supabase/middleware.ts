@@ -1,6 +1,15 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+type CookieSet = { name: string; value: string; options: Record<string, unknown> };
+
+const cookieOptions: Record<string, unknown> = {
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+  httpOnly: true,
+};
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -8,17 +17,20 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: {
+        schema: 'millwork',
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+        setAll(cookiesToSet: CookieSet[]) {
+          cookiesToSet.forEach(({ name, value }: CookieSet) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value, options }: CookieSet) =>
+            supabaseResponse.cookies.set(name, value, { ...cookieOptions, ...options })
           );
         },
       },

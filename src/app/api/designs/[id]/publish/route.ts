@@ -65,6 +65,7 @@ export async function POST(
     .eq('id', params.id);
 
   if (error) {
+    console.error('Failed to publish design:', error);
     return NextResponse.json({ error: 'Failed to publish design' }, { status: 500 });
   }
 

@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
     .range(offset, offset + limit - 1);
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin audit log fetch error:', dbError);
+    return NextResponse.json({ error: 'Failed to fetch audit log' }, { status: 500 });
   }
 
   return NextResponse.json({ entries: data || [], total: count || 0, page, limit });

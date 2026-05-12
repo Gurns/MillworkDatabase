@@ -32,10 +32,10 @@ export default function CollectionsPage() {
         }
 
         const { data, error: fetchError } = await supabase
-          .from('design_collections')
+          .from('collections')
           .select(`
             id,
-            name,
+            title as name,
             description,
             is_public,
             created_at,

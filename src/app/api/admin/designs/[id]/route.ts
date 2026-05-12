@@ -31,7 +31,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin update design error:', dbError);
+    return NextResponse.json({ error: 'Failed to update design' }, { status: 500 });
   }
 
   await logAdminAction(supabase, user!.id, 'update_design', 'design', params.id, updates);
@@ -50,7 +51,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     .eq('id', params.id);
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin archive design error:', dbError);
+    return NextResponse.json({ error: 'Failed to archive design' }, { status: 500 });
   }
 
   await logAdminAction(supabase, user!.id, 'archive_design', 'design', params.id);

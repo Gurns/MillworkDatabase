@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     .range(from, from + perPage - 1);
 
   if (error) {
+    console.error('Failed to fetch favorites:', error);
     return NextResponse.json({ error: 'Failed to fetch favorites' }, { status: 500 });
   }
 
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
     if (error.code === '23505') {
       return NextResponse.json({ error: 'Already favorited' }, { status: 409 });
     }
+    console.error('Failed to add favorite:', error);
     return NextResponse.json({ error: 'Failed to add favorite' }, { status: 500 });
   }
 

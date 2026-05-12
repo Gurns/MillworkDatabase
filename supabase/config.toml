@@ -7,8 +7,8 @@ id = "millwork-database"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
+schemas = ["public", "millwork", "storage"]
+extra_search_path = ["millwork", "public", "extensions"]
 max_rows = 1000
 
 [db]

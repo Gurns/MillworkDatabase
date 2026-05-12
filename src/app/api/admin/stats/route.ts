@@ -9,7 +9,8 @@ export async function GET() {
 
   const { data, error: rpcError } = await supabase.rpc('get_admin_stats');
   if (rpcError) {
-    return NextResponse.json({ error: rpcError.message }, { status: 500 });
+    console.error('Admin stats fetch error:', rpcError);
+    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
 
   return NextResponse.json(data?.[0] || {});

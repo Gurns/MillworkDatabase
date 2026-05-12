@@ -1,10 +1,10 @@
 // Auto-generated types would come from `supabase gen types typescript`
-// This is the manual equivalent matching our schema
+// Manual equivalent matching our millwork schema
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
-  public: {
+  millwork: {
     Tables: {
       users: {
         Row: {
@@ -15,6 +15,10 @@ export interface Database {
           bio: string | null;
           avatar_url: string | null;
           is_cnc_provider: boolean;
+          role: 'user' | 'moderator' | 'admin';
+          is_banned: boolean;
+          banned_reason: string | null;
+          banned_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -26,6 +30,7 @@ export interface Database {
           bio?: string | null;
           avatar_url?: string | null;
           is_cnc_provider?: boolean;
+          role?: 'user' | 'moderator' | 'admin';
         };
         Update: {
           username?: string;
@@ -58,6 +63,9 @@ export interface Database {
           comment_count: number;
           status: DesignStatus;
           published_at: string | null;
+          license_type: CcLicenseType | null;
+          license_url: string | null;
+          search_vector: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -78,6 +86,8 @@ export interface Database {
           is_remix?: boolean;
           forked_from_id?: string | null;
           status?: DesignStatus;
+          license_type?: CcLicenseType | null;
+          license_url?: string | null;
         };
         Update: {
           title?: string;
@@ -94,6 +104,8 @@ export interface Database {
           is_remix?: boolean;
           forked_from_id?: string | null;
           status?: DesignStatus;
+          license_type?: CcLicenseType | null;
+          license_url?: string | null;
         };
       };
       categories: {
@@ -146,25 +158,13 @@ export interface Database {
         };
       };
       design_categories: {
-        Row: {
-          design_id: string;
-          category_id: string;
-        };
-        Insert: {
-          design_id: string;
-          category_id: string;
-        };
+        Row: { design_id: string; category_id: string; };
+        Insert: { design_id: string; category_id: string; };
         Update: never;
       };
       design_styles: {
-        Row: {
-          design_id: string;
-          style_id: string;
-        };
-        Insert: {
-          design_id: string;
-          style_id: string;
-        };
+        Row: { design_id: string; style_id: string; };
+        Insert: { design_id: string; style_id: string; };
         Update: never;
       };
       design_images: {
@@ -233,17 +233,8 @@ export interface Database {
         Update: never;
       };
       favorites: {
-        Row: {
-          id: string;
-          user_id: string;
-          design_id: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          design_id: string;
-        };
+        Row: { id: string; user_id: string; design_id: string; created_at: string; };
+        Insert: { id?: string; user_id: string; design_id: string; };
         Update: never;
       };
       collections: {
@@ -264,27 +255,12 @@ export interface Database {
           description?: string | null;
           is_public?: boolean;
         };
-        Update: {
-          title?: string;
-          description?: string | null;
-          is_public?: boolean;
-        };
+        Update: { title?: string; description?: string | null; is_public?: boolean; };
       };
       collection_designs: {
-        Row: {
-          collection_id: string;
-          design_id: string;
-          display_order: number;
-          added_at: string;
-        };
-        Insert: {
-          collection_id: string;
-          design_id: string;
-          display_order?: number;
-        };
-        Update: {
-          display_order?: number;
-        };
+        Row: { collection_id: string; design_id: string; display_order: number; added_at: string; };
+        Insert: { collection_id: string; design_id: string; display_order?: number; };
+        Update: { display_order?: number; };
       };
       comments: {
         Row: {
@@ -303,23 +279,30 @@ export interface Database {
           content: string;
           parent_comment_id?: string | null;
         };
-        Update: {
-          content?: string;
-        };
+        Update: { content?: string; };
       };
       downloads: {
+        Row: { id: string; user_id: string; design_id: string; file_type: string | null; created_at: string; };
+        Insert: { id?: string; user_id: string; design_id: string; file_type?: string | null; };
+        Update: never;
+      };
+      purchases: {
         Row: {
           id: string;
           user_id: string;
           design_id: string;
-          file_type: string | null;
+          stripe_payment_intent_id: string | null;
+          amount_cents: number;
+          status: string;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           design_id: string;
-          file_type?: string | null;
+          stripe_payment_intent_id?: string | null;
+          amount_cents: number;
+          status?: string;
         };
         Update: never;
       };
@@ -375,15 +358,8 @@ export interface Database {
         Update: never;
       };
       user_badges: {
-        Row: {
-          user_id: string;
-          badge_id: string;
-          earned_at: string;
-        };
-        Insert: {
-          user_id: string;
-          badge_id: string;
-        };
+        Row: { user_id: string; badge_id: string; earned_at: string; };
+        Insert: { user_id: string; badge_id: string; };
         Update: never;
       };
       cnc_providers: {
@@ -439,18 +415,54 @@ export interface Database {
           rating: number;
           comment?: string | null;
         };
-        Update: {
-          rating?: number;
-          comment?: string | null;
+        Update: { rating?: number; comment?: string | null; };
+      };
+      site_settings: {
+        Row: {
+          key: string;
+          value: Json;
+          description: string | null;
+          updated_by: string | null;
+          updated_at: string;
         };
+        Insert: { key: string; value?: Json; description?: string | null; };
+        Update: { value?: Json; description?: string | null; };
+      };
+      admin_audit_log: {
+        Row: {
+          id: string;
+          admin_id: string;
+          action: string;
+          target_type: string | null;
+          target_id: string | null;
+          details: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          action: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          details?: Json | null;
+        };
+        Update: never;
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_similar_designs: { Args: { p_design_id: string; p_limit?: number }; Returns: any[]; };
+      get_trending_designs: { Args: { p_limit?: number; p_days?: number }; Returns: any[]; };
+      get_personalized_suggestions: { Args: { p_user_id: string; p_limit?: number }; Returns: any[]; };
+      get_popular_by_category: { Args: { p_category_slug: string; p_limit?: number }; Returns: any[]; };
+      is_admin: { Args: { p_user_id: string }; Returns: boolean; };
+      get_admin_stats: { Args: Record<string, never>; Returns: any[]; };
+    };
     Enums: {
       design_status: DesignStatus;
       difficulty_level: DifficultyLevel;
       file_type: FileType;
+      cc_license_type: CcLicenseType;
     };
   };
 }
@@ -460,6 +472,7 @@ export interface Database {
 export type DesignStatus = 'draft' | 'published' | 'archived';
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 export type FileType = 'stl' | 'step' | 'obj' | 'ply' | 'f3d' | 'fusion360' | 'other';
+export type CcLicenseType = 'CC0' | 'CC-BY-4.0' | 'CC-BY-SA-4.0' | 'CC-BY-NC-4.0' | 'CC-BY-NC-SA-4.0' | 'CC-BY-ND-4.0' | 'CC-BY-NC-ND-4.0';
 
 export interface DimensionsJson {
   length?: number;
@@ -479,20 +492,22 @@ export interface CncCapabilities {
 
 // --- Convenience aliases ---
 
-export type User = Database['public']['Tables']['users']['Row'];
-export type Design = Database['public']['Tables']['designs']['Row'];
-export type Category = Database['public']['Tables']['categories']['Row'];
-export type Style = Database['public']['Tables']['styles']['Row'];
-export type DesignImage = Database['public']['Tables']['design_images']['Row'];
-export type DesignFile = Database['public']['Tables']['design_files']['Row'];
-export type Comment = Database['public']['Tables']['comments']['Row'];
-export type Collection = Database['public']['Tables']['collections']['Row'];
-export type Favorite = Database['public']['Tables']['favorites']['Row'];
-export type Download = Database['public']['Tables']['downloads']['Row'];
-export type UserStats = Database['public']['Tables']['user_stats']['Row'];
-export type Badge = Database['public']['Tables']['badges']['Row'];
-export type CncProvider = Database['public']['Tables']['cnc_providers']['Row'];
-export type CncReview = Database['public']['Tables']['cnc_reviews']['Row'];
+export type User = Database['millwork']['Tables']['users']['Row'];
+export type Design = Database['millwork']['Tables']['designs']['Row'];
+export type Category = Database['millwork']['Tables']['categories']['Row'];
+export type Style = Database['millwork']['Tables']['styles']['Row'];
+export type DesignImage = Database['millwork']['Tables']['design_images']['Row'];
+export type DesignFile = Database['millwork']['Tables']['design_files']['Row'];
+export type Comment = Database['millwork']['Tables']['comments']['Row'];
+export type Collection = Database['millwork']['Tables']['collections']['Row'];
+export type Favorite = Database['millwork']['Tables']['favorites']['Row'];
+export type Download = Database['millwork']['Tables']['downloads']['Row'];
+export type Purchase = Database['millwork']['Tables']['purchases']['Row'];
+export type UserStats = Database['millwork']['Tables']['user_stats']['Row'];
+export type Badge = Database['millwork']['Tables']['badges']['Row'];
+export type CncProvider = Database['millwork']['Tables']['cnc_providers']['Row'];
+export type CncReview = Database['millwork']['Tables']['cnc_reviews']['Row'];
+export type SiteSetting = Database['millwork']['Tables']['site_settings']['Row'];
 
 // --- Joined/enriched types for API responses ---
 

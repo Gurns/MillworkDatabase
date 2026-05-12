@@ -13,7 +13,8 @@ export async function GET() {
     .order('key');
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin settings fetch error:', dbError);
+    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
   }
 
   return NextResponse.json({ settings: data || [] });
@@ -39,7 +40,8 @@ export async function PATCH(request: NextRequest) {
       .upsert(update, { onConflict: 'key' });
 
     if (dbError) {
-      return NextResponse.json({ error: `Failed to update ${update.key}: ${dbError.message}` }, { status: 500 });
+      console.error('Admin settings update error:', dbError);
+      return NextResponse.json({ error: `Failed to update ${update.key}` }, { status: 500 });
     }
   }
 

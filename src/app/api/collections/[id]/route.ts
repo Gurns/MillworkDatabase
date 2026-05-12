@@ -71,7 +71,10 @@ export async function PATCH(
     .eq('id', params.id)
     .eq('creator_id', user.id);
 
-  if (error) return NextResponse.json({ error: 'Failed to update collection' }, { status: 500 });
+  if (error) {
+    console.error('Failed to update collection:', error);
+    return NextResponse.json({ error: 'Failed to update collection' }, { status: 500 });
+  }
   return NextResponse.json({ message: 'Collection updated' });
 }
 
@@ -90,6 +93,9 @@ export async function DELETE(
     .eq('id', params.id)
     .eq('creator_id', user.id);
 
-  if (error) return NextResponse.json({ error: 'Failed to delete collection' }, { status: 500 });
+  if (error) {
+    console.error('Failed to delete collection:', error);
+    return NextResponse.json({ error: 'Failed to delete collection' }, { status: 500 });
+  }
   return NextResponse.json({ message: 'Collection deleted' });
 }

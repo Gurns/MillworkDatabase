@@ -2,6 +2,24 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database';
 
+type CookieSet = { name: string; value: string; options: Record<string, unknown> };
+
+const supabaseCookieOptions: Record<string, unknown> = {
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+  httpOnly: true,
+};
+
+const supabaseOptions = {
+  global: {
+    schema: 'millwork',
+  },
+  cookies: {
+    options: supabaseCookieOptions,
+  },
+};
+
 export function createServerSupabaseClient() {
   const cookieStore = cookies();
 
@@ -9,14 +27,15 @@ export function createServerSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      ...supabaseOptions,
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieSet[]) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+            cookiesToSet.forEach(({ name, value, options }: CookieSet) =>
+              cookieStore.set(name, value, { ...supabaseCookieOptions, ...options })
             );
           } catch {
             // The `setAll` method was called from a Server Component.
@@ -33,6 +52,7 @@ export function createServiceRoleClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
+      ...supabaseOptions,
       cookies: {
         getAll() {
           return [];

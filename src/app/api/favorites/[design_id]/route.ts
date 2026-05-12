@@ -20,6 +20,7 @@ export async function DELETE(
     .eq('design_id', params.design_id);
 
   if (error) {
+    console.error('Failed to remove favorite:', error);
     return NextResponse.json({ error: 'Failed to remove favorite' }, { status: 500 });
   }
 

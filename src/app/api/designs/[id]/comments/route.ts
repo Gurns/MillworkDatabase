@@ -33,6 +33,7 @@ export async function GET(
     .range(from, from + perPage - 1);
 
   if (error) {
+    console.error('Failed to fetch comments:', error);
     return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 });
   }
 
@@ -101,6 +102,7 @@ export async function POST(
     .single();
 
   if (error) {
+    console.error('Failed to create comment:', error);
     return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
   }
 

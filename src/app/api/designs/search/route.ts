@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     .range(from, from + perPage - 1);
 
   if (error) {
+    console.error('Search failed:', error);
     return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, logAdminAction } from '@/lib/admin/require-admin';
+import { sanitizeForOrClause } from '@/lib/utils/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1');
   const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
-  const search = searchParams.get('search') || '';
+  const search = sanitizeForOrClause(searchParams.get('search') || '');
   const role = searchParams.get('role') || '';
   const offset = (page - 1) * limit;
 
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
 
   const { data, count, error: dbError } = await query;
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin users fetch error:', dbError);
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 
   return NextResponse.json({ users: data || [], total: count || 0, page, limit });

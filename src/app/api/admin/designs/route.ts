@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/require-admin';
+import { sanitizeForOrClause } from '@/lib/utils/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
   const status = searchParams.get('status') || '';
-  const search = searchParams.get('search') || '';
+  const search = sanitizeForOrClause(searchParams.get('search') || '');
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
 
   const { data, count, error: dbError } = await query;
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin designs fetch error:', dbError);
+    return NextResponse.json({ error: 'Failed to fetch designs' }, { status: 500 });
   }
 
   return NextResponse.json({ designs: data || [], total: count || 0, page, limit });

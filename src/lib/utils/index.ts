@@ -23,3 +23,8 @@ export {
   DIFFICULTY_LEVELS,
   MATERIALS,
 } from './constants';
+export {
+  sanitizeHtml,
+  sanitizeSearchInput,
+  sanitizeForOrClause,
+} from './security';

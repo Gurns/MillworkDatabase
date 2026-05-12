@@ -28,7 +28,7 @@ export default function FavoritesPage() {
         }
 
         const { data, error: fetchError } = await supabase
-          .from('design_favorites')
+          .from('favorites')
           .select(`
             id as favorite_id,
             designs (
@@ -77,7 +77,7 @@ export default function FavoritesPage() {
     if (!favoriteId) return;
     try {
       const { error } = await supabase
-        .from('design_favorites')
+        .from('favorites')
         .delete()
         .eq('id', favoriteId);
 

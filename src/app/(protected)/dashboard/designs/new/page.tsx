@@ -166,7 +166,7 @@ export default function NewDesignPage() {
     setTileUploading((prev) => ({ ...prev, [tileType]: true }));
 
     try {
-      const bucket = isImageTile ? 'design-images' : 'design-models';
+      const bucket = isImageTile ? 'millwork-design-images' : 'millwork-design-models';
       const filePath = `${designId}/${tileType}-${Date.now()}-${file.name}`;
 
       const { error: uploadError } = await supabase.storage
@@ -180,7 +180,7 @@ export default function NewDesignPage() {
 
       if (isImageTile) {
         const { data: { publicUrl } } = supabase.storage
-          .from('design-images')
+          .from('millwork-design-images')
           .getPublicUrl(filePath);
 
         // Save to design_images table

@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
     .range(from, from + perPage - 1);
 
   if (error) {
+    console.error('Failed to fetch providers:', error);
     return NextResponse.json({ error: 'Failed to fetch providers' }, { status: 500 });
   }
 
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
     if (error.code === '23505') {
       return NextResponse.json({ error: 'You already have a CNC provider profile' }, { status: 409 });
     }
+    console.error('Failed to create provider profile:', error);
     return NextResponse.json({ error: 'Failed to create provider profile' }, { status: 500 });
   }
 

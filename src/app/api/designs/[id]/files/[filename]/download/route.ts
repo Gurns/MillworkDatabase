@@ -59,7 +59,7 @@ export async function GET(
   // Generate signed URL using service role (bypasses RLS on private bucket)
   const serviceClient = createServiceRoleClient();
   const { data: signedUrl, error } = await serviceClient.storage
-    .from('design-models')
+    .from('millwork-design-models')
     .createSignedUrl(file.file_path, 3600); // 1 hour expiry
 
   if (error || !signedUrl) {

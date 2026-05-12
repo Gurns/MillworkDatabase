@@ -11,6 +11,7 @@ export async function GET() {
     .order('name', { ascending: true });
 
   if (error) {
+    console.error('Failed to fetch styles:', error);
     return NextResponse.json({ error: 'Failed to fetch styles' }, { status: 500 });
   }
 

@@ -1,0 +1,7 @@
+Contact: mailto:security@millworkdatabase.com
+Preferred-Languages: en
+Canonical: https://millworkdatabase.com/.well-known/security.txt
+Policy: https://millworkdatabase.com/security-policy
+Expires: 2026-12-31T23:59:59.999Z
+Encryption: https://millworkdatabase.com/.well-known/pgpkey.txt
+Hiring: https://millworkdatabase.com/contact

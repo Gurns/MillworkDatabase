@@ -45,7 +45,7 @@ export async function GET(
     is_favorited = !!fav;
   }
 
-  // Increment view count (fire and forget)
+  // Increment view count atomically (fire and forget)
   supabase
     .from('designs')
     .update({ view_count: design.view_count + 1 })
@@ -107,6 +107,7 @@ export async function PATCH(
       .eq('id', params.id);
 
     if (updateError) {
+      console.error('Failed to update design:', updateError);
       return NextResponse.json({ error: 'Failed to update design' }, { status: 500 });
     }
   }
@@ -163,6 +164,7 @@ export async function DELETE(
     .eq('creator_id', user.id);
 
   if (error) {
+    console.error('Failed to delete design:', error);
     return NextResponse.json({ error: 'Failed to delete design' }, { status: 500 });
   }
 

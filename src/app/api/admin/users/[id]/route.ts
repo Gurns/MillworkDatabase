@@ -34,7 +34,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error('Admin update user error:', dbError);
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 
   await logAdminAction(supabase, user!.id, 'update_user', 'user', params.id, updates);

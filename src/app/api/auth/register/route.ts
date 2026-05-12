@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Username already taken' },
+        { error: 'Registration failed. Please try a different username or check your email.' },
         { status: 409 }
       );
     }
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       return NextResponse.json(
-        { error: authError.message },
+        { error: 'Registration failed. Please check your details and try again.' },
         { status: 400 }
       );
     }
