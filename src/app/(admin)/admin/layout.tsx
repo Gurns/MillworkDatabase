@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
+
+type AdminProfile = Pick<
+  Database['millwork']['Tables']['users']['Row'],
+  'role' | 'username' | 'display_name'
+>;
 
 const adminLinks = [
   { href: '/admin', label: 'Dashboard', icon: 'chart' },
@@ -18,11 +24,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
+  const { data } = await supabase
     .from('users')
     .select('role, username, display_name')
     .eq('id', user.id)
     .single();
+  const profile = data as AdminProfile | null;
 
   if (!profile || profile.role !== 'admin') {
     redirect('/dashboard');

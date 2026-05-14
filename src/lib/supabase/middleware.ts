@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import type { Database } from '@/types/database';
 
 type CookieSet = { name: string; value: string; options: Record<string, unknown> };
 
@@ -13,11 +14,11 @@ const cookieOptions: Record<string, unknown> = {
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database, 'millwork', any>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      global: {
+      db: {
         schema: 'millwork',
       },
       cookies: {

@@ -27,7 +27,7 @@ export const LEVELS = [
 ] as const;
 
 export function getLevelForPoints(points: number) {
-  let current = LEVELS[0];
+  let current: (typeof LEVELS)[number] = LEVELS[0];
   for (const level of LEVELS) {
     if (points >= level.min_points) {
       current = level;
@@ -104,7 +104,7 @@ export const MATERIAL_GROUPS = [
 ] as const;
 
 // Flat array for backward compatibility
-export const MATERIALS = MATERIAL_GROUPS.flatMap((group) => group.options) as const;
+export const MATERIALS = MATERIAL_GROUPS.flatMap((group) => group.options) as readonly string[];
 
 // ─── Creative Commons Licensing ───
 export const CC_LICENSES = [

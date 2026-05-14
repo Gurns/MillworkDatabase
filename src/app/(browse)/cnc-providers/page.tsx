@@ -42,7 +42,7 @@ export default async function CNCProvidersPage() {
                   Coming Soon
                 </h2>
                 <p className="text-gray-600 mb-6">
-                  We're building a network of professional CNC providers. Be among the first to join our community.
+                  We&apos;re building a network of professional CNC providers. Be among the first to join our community.
                 </p>
                 <Link
                   href="/dashboard/cnc-profile"

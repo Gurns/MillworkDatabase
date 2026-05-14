@@ -76,7 +76,7 @@ export default function AdminDashboard() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-display font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome to the admin panel. Here's an overview of your site.</p>
+        <p className="text-gray-600 mt-2">Welcome to the admin panel. Here&apos;s an overview of your site.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

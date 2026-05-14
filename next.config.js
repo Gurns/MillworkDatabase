@@ -65,6 +65,7 @@ const nextConfig = {
         ],
         has: [
           {
+            type: 'header',
             key: 'x-forwarded-proto',
             value: 'https',
           },

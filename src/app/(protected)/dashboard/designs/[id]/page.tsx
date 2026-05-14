@@ -146,7 +146,7 @@ export default function EditDesignPage() {
           <div>
             <p className="text-xs text-gray-500 mb-1">Price</p>
             <p className="text-2xl font-bold text-gray-900">
-              {design.is_free ? 'Free' : `$${(design.price_cents / 100).toFixed(2)}`}
+              {design.is_free ? 'Free' : `$${((design.price_cents ?? 0) / 100).toFixed(2)}`}
             </p>
           </div>
         </div>

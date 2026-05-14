@@ -6,11 +6,25 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Design } from '@/types';
 
+type DesignListItem = Pick<
+  Design,
+  | 'id'
+  | 'title'
+  | 'slug'
+  | 'status'
+  | 'view_count'
+  | 'download_count'
+  | 'favorite_count'
+  | 'published_at'
+  | 'created_at'
+  | 'primary_image_url'
+>;
+
 export default function MyDesignsPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [designs, setDesigns] = useState<Design[]>([]);
+  const [designs, setDesigns] = useState<DesignListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);

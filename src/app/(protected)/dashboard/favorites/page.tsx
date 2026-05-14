@@ -200,7 +200,7 @@ export default function FavoritesPage() {
                     {design.status}
                   </span>
                   <span className="text-sm font-semibold text-gray-900">
-                    {design.is_free ? 'Free' : `$${(design.price_cents / 100).toFixed(2)}`}
+                    {design.is_free ? 'Free' : `$${((design.price_cents ?? 0) / 100).toFixed(2)}`}
                   </span>
                 </div>
 
